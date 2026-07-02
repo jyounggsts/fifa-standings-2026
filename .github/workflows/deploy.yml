@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'app.js'
+      - 'index.html'
+      - 'styles.css'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -22,6 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync site files into docs/
+        run: |
+          cp app.js index.html styles.css docs/
+
       - name: Trigger GitHub Pages rebuild (legacy /docs)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

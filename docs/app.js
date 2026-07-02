@@ -1,7 +1,11 @@
 const API_BASE = 'https://worldcup26.ir/get';
 const GROUP_ORDER = 'ABCDEFGHIJKL'.split('');
 
-const POLL = { LIVE: 5_000, SOON: 12_000, IDLE: 30_000 };
+const POLL = { LIVE: 5_000, WINDOW: 8_000, SOON: 12_000, IDLE: 30_000 };
+
+const LIVE_ELAPSED = new Set([
+  'live', 'inplay', 'playing', '1sthalf', '2ndhalf', 'extratime', 'extra', 'penalties',
+]);
 
 const BRACKET_ROUNDS = [
   { type: 'r32', label: 'Round of 32' },
@@ -20,6 +24,7 @@ const state = {
   selectedGroup: 'ALL',
   hasLive: false,
   hasSoon: false,
+  hasKickoffWindow: false,
   lastFetch: null,
   pollTimer: null,
   tickTimer: null,
@@ -69,6 +74,15 @@ function normalizeElapsed(raw) {
   return (raw || '').toLowerCase().replace(/\s+/g, '');
 }
 
+function minutesSinceKickoff(game) {
+  return Math.floor((Date.now() - parseGameDate(game.local_date).getTime()) / 60_000);
+}
+
+function isWithinMatchWindow(game) {
+  const mins = minutesSinceKickoff(game);
+  return mins >= 0 && mins <= 150;
+}
+
 function isNotStarted(game) {
   const e = normalizeElapsed(game.time_elapsed);
   return !e || e === 'notstarted';
@@ -82,8 +96,31 @@ function scoresArePlayable(game) {
   return !isScoreNull(game.home_score) && !isScoreNull(game.away_score);
 }
 
+function hasMeaningfulScore(game) {
+  if (!scoresArePlayable(game)) return false;
+  const h = Number(game.home_score);
+  const a = Number(game.away_score);
+  return !isNaN(h) && !isNaN(a) && (h > 0 || a > 0);
+}
+
+function elapsedSignalsLive(e) {
+  if (!e || e === 'notstarted' || e === 'finished') return false;
+  if (e === 'ht' || e === 'halftime') return true;
+  if (LIVE_ELAPSED.has(e)) return true;
+  return /\d/.test(e);
+}
+
+function isApiLaggingLive(game) {
+  if (game.finished === 'TRUE' || !isWithinMatchWindow(game)) return false;
+  if (!isNotStarted(game)) return false;
+  const mins = minutesSinceKickoff(game);
+  if (mins < 5) return false;
+  return hasMeaningfulScore(game) || mins >= 12;
+}
+
 function shouldShowScore(game) {
   if (game.finished === 'TRUE') return scoresArePlayable(game);
+  if (isGameLive(game)) return scoresArePlayable(game);
   if (isNotStarted(game)) return false;
   return scoresArePlayable(game);
 }
@@ -91,9 +128,15 @@ function shouldShowScore(game) {
 function isGameLive(game) {
   if (game.finished === 'TRUE') return false;
   const e = normalizeElapsed(game.time_elapsed);
-  if (e === 'notstarted' || e === 'finished' || !e) return false;
-  if (e === 'ht' || e === 'halftime') return true;
-  return /\d/.test(e);
+  if (e === 'finished') return false;
+  if (elapsedSignalsLive(e)) return true;
+  return isApiLaggingLive(game);
+}
+
+function isGameInKickoffWindow(game) {
+  if (game.finished === 'TRUE') return false;
+  const diff = parseGameDate(game.local_date) - Date.now();
+  return diff <= 30 * 60 * 1000 && diff >= -2.5 * 60 * 60 * 1000;
 }
 
 function isGameSoon(game) {
@@ -102,15 +145,38 @@ function isGameSoon(game) {
   return diff > 0 && diff <= 2 * 60 * 60 * 1000;
 }
 
+function estimateMinute(game) {
+  const mins = minutesSinceKickoff(game);
+  if (mins < 0) return null;
+  if (mins <= 45) return `${mins}'`;
+  if (mins <= 60) return 'HT';
+  if (mins <= 105) return `${mins - 15}'`;
+  if (mins <= 120) return `90+${mins - 105}'`;
+  return '90+' ;
+}
+
 function getElapsedDisplay(game) {
   const e = normalizeElapsed(game.time_elapsed);
   if (game.finished === 'TRUE' || e === 'finished') return 'FT';
-  if (e === 'notstarted' || !e) return null;
   if (e === 'ht' || e === 'halftime') return 'HT';
   const stoppage = e.match(/(\d+)\+(\d+)/);
   if (stoppage) return `${stoppage[1]}+${stoppage[2]}'`;
   const minute = e.match(/(\d+)/);
-  return minute ? `${minute[1]}'` : e.toUpperCase();
+  if (minute) return `${minute[1]}'`;
+  if (isGameLive(game)) return estimateMinute(game) || 'LIVE';
+  return null;
+}
+
+function getUpcomingStatus(game) {
+  const diff = parseGameDate(game.local_date) - Date.now();
+  if (diff > 60_000) return `Starts in ${formatCountdown(diff)}`;
+  if (diff > 0) return `Kickoff in ${formatCountdown(diff)}`;
+  if (isNotStarted(game)) {
+    const mins = minutesSinceKickoff(game);
+    if (mins >= 1 && mins < 12) return 'Awaiting kickoff';
+    if (mins >= 12) return 'Match in progress';
+  }
+  return 'Starting soon';
 }
 
 function getMatchPhase(game) {
@@ -330,11 +396,9 @@ function renderStreamCard(game) {
   const awayName = game.away_team_name_en || teamName(awayId) || 'TBD';
 
   let footText = '';
-  if (phase === 'live') footText = elapsed ? `LIVE ${elapsed}` : 'LIVE';
-  else if (phase === 'upcoming') {
-    const diff = start - Date.now();
-    footText = diff > 0 ? `Starts in ${formatCountdown(diff)}` : isNotStarted(game) ? 'Awaiting kickoff' : 'Starting soon';
-  } else footText = 'Full Time';
+  if (phase === 'live') footText = elapsed ? `LIVE · ${elapsed}` : 'LIVE';
+  else if (phase === 'upcoming') footText = getUpcomingStatus(game);
+  else footText = 'Full Time';
 
   const pensHtml = score?.pens
     ? `<span class="se-pens">(${score.pens.home}-${score.pens.away} pens)</span>` : '';
@@ -619,32 +683,49 @@ function tick() {
     }
   }
 
+  let liveNow = false;
+
   $$('[data-countdown]').forEach((el) => {
-    const game = state.games.find((g) => g.id === el.dataset.countdown);
+    const game = state.games.find((g) => String(g.id) === String(el.dataset.countdown));
     if (!game) return;
     const phase = getMatchPhase(game);
+    const card = el.closest('.se-card, .b-match');
+
     if (phase === 'upcoming') {
-      const diff = parseGameDate(game.local_date) - Date.now();
-      el.textContent = diff > 0 ? `Starts in ${formatCountdown(diff)}` : isNotStarted(game) ? 'Awaiting kickoff' : 'Starting soon';
+      el.textContent = getUpcomingStatus(game);
+      el.className = 'se-foot';
+      card?.classList.remove('live');
     } else if (phase === 'live') {
+      liveNow = true;
       const elapsed = getElapsedDisplay(game);
-      el.textContent = elapsed ? `LIVE ${elapsed}` : 'LIVE';
+      el.textContent = elapsed ? `LIVE · ${elapsed}` : 'LIVE';
       el.className = 'se-foot live-text';
+      card?.classList.add('live');
+      card?.classList.remove('finished', 'upcoming');
+
+      if (card?.classList.contains('se-card')) {
+        const score = getScore(game);
+        const scores = card.querySelectorAll('.se-score');
+        const vs = card.querySelector('.se-vs');
+        if (score) {
+          if (scores[0]) scores[0].textContent = score.home;
+          if (scores[1]) scores[1].textContent = score.away;
+          if (vs) vs.textContent = '-';
+        }
+        const liveTag = card.querySelector('.se-live-tag');
+        if (!liveTag) {
+          card.querySelector('.se-card-top')?.insertAdjacentHTML(
+            'beforeend',
+            '<span class="se-live-tag">LIVE</span>',
+          );
+        }
+      }
     }
   });
 
-  if (state.hasLive) {
+  if (liveNow || state.hasLive) {
     renderLiveBanner();
-    $$('.se-card.live, .b-match.live').forEach((card) => {
-      const game = state.games.find((g) => g.id === card.dataset.gameId);
-      if (!game) return;
-      const score = getScore(game);
-      if (card.classList.contains('se-card') && score) {
-        const scores = card.querySelectorAll('.se-score');
-        if (scores[0]) scores[0].textContent = score.home;
-        if (scores[1]) scores[1].textContent = score.away;
-      }
-    });
+    renderHeaderStats();
   }
 }
 
@@ -652,6 +733,7 @@ function tick() {
 
 function getPollInterval() {
   if (state.hasLive) return POLL.LIVE;
+  if (state.hasKickoffWindow) return POLL.WINDOW;
   if (state.hasSoon) return POLL.SOON;
   return POLL.IDLE;
 }
@@ -663,6 +745,7 @@ function schedulePoll() {
 
 function updateLiveFlags() {
   state.hasLive = state.games.some(isGameLive);
+  state.hasKickoffWindow = state.games.some(isGameInKickoffWindow);
   state.hasSoon = state.games.some(isGameSoon);
 }
 
