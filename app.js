@@ -1,14 +1,30 @@
 const API_BASE = 'https://worldcup26.ir/get';
-const REFRESH_INTERVAL_MS = 60_000;
-const LIVE_REFRESH_INTERVAL_MS = 30_000;
-
 const GROUP_ORDER = 'ABCDEFGHIJKL'.split('');
 
-let teamsMap = {};
-let refreshTimer = null;
-let hasLiveMatches = false;
+const POLL = {
+  LIVE: 5_000,
+  SOON: 12_000,
+  IDLE: 30_000,
+};
+
+const state = {
+  teamsMap: {},
+  groups: [],
+  games: [],
+  thirdPlaceRankings: [],
+  teamStatusMap: {},
+  selectedGroup: 'ALL',
+  hasLive: false,
+  hasSoon: false,
+  lastFetch: null,
+  pollTimer: null,
+  tickTimer: null,
+};
 
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+// ── API ──────────────────────────────────────────────────────────
 
 async function fetchJSON(endpoint) {
   const res = await fetch(`${API_BASE}/${endpoint}`);
@@ -16,233 +32,580 @@ async function fetchJSON(endpoint) {
   return res.json();
 }
 
+// ── Date / time helpers ──────────────────────────────────────────
+
 function parseGameDate(dateStr) {
   const [datePart, timePart] = dateStr.split(' ');
   const [month, day, year] = datePart.split('/').map(Number);
-  const [hour, minute] = timePart.split(':').map(Number);
-  return new Date(year, month - 1, day, hour, minute);
+  const [hour, minute] = (timePart || '00:00').split(':').map(Number);
+  return new Date(year, month - 1, day, hour, minute, 0);
+}
+
+function isSameCalendarDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function formatKickoff(date) {
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function formatTodayTitle() {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return '00:00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// ── Match status ─────────────────────────────────────────────────
+
+function normalizeElapsed(raw) {
+  return (raw || '').toLowerCase().replace(/\s+/g, '');
 }
 
 function isGameLive(game) {
   if (game.finished === 'TRUE') return false;
-  const elapsed = (game.time_elapsed || '').toLowerCase();
-  if (elapsed && elapsed !== 'finished' && elapsed !== 'not started') return true;
-  const start = parseGameDate(game.local_date);
-  const now = new Date();
-  const twoHoursLater = new Date(start.getTime() + 2.5 * 60 * 60 * 1000);
-  return now >= start && now <= twoHoursLater;
-}
-
-function isGameUpcoming(game) {
-  if (game.finished === 'TRUE') return false;
-  if (isGameLive(game)) return false;
-  return parseGameDate(game.local_date) > new Date();
-}
-
-function getMatchStatus(game) {
-  if (game.finished === 'TRUE') return { label: 'FT', class: 'finished' };
-  if (isGameLive(game)) {
-    const elapsed = game.time_elapsed || 'LIVE';
-    return { label: elapsed.toUpperCase(), class: 'live' };
+  const e = normalizeElapsed(game.time_elapsed);
+  if (e === 'notstarted' || e === 'finished' || !e) {
+    const start = parseGameDate(game.local_date);
+    const now = new Date();
+    const end = new Date(start.getTime() + 2.5 * 60 * 60 * 1000);
+    const inWindow = now >= start && now <= end;
+    const hasScore = game.home_score !== 'null' && game.away_score !== 'null';
+    return inWindow && hasScore;
   }
-  return { label: 'Upcoming', class: 'upcoming' };
+  return true;
 }
 
-function formatMatchTime(dateStr) {
-  const d = parseGameDate(dateStr);
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+function isGameSoon(game) {
+  if (game.finished === 'TRUE' || isGameLive(game)) return false;
+  const diff = parseGameDate(game.local_date) - new Date();
+  return diff > 0 && diff <= 2 * 60 * 60 * 1000;
+}
+
+function getElapsedDisplay(game) {
+  const e = normalizeElapsed(game.time_elapsed);
+  if (game.finished === 'TRUE' || e === 'finished') return 'FT';
+  if (e === 'notstarted' || !e) {
+    if (isGameLive(game)) return estimateMinute(game);
+    return null;
+  }
+  if (e === 'ht' || e === 'halftime') return 'HT';
+  const match = e.match(/(\d+)/);
+  return match ? `${match[1]}′` : e.toUpperCase();
+}
+
+function estimateMinute(game) {
+  const start = parseGameDate(game.local_date);
+  const mins = Math.floor((Date.now() - start.getTime()) / 60_000);
+  if (mins < 0) return null;
+  if (mins <= 45) return `${mins}′`;
+  if (mins <= 60) return 'HT';
+  if (mins <= 105) return `${mins - 15}′`;
+  return '90+′';
+}
+
+function getMatchPhase(game) {
+  if (game.finished === 'TRUE') return 'finished';
+  if (isGameLive(game)) return 'live';
+  if (parseGameDate(game.local_date) > new Date()) return 'upcoming';
+  return 'finished';
 }
 
 function getStageLabel(game) {
-  if (game.type === 'group') return `Group ${game.group} · MD ${game.matchday}`;
-  return game.type?.replace(/_/g, ' ') || 'Knockout';
+  const type = (game.type || '').toLowerCase();
+  if (type === 'group') return `Group ${game.group} · Matchday ${game.matchday}`;
+  const labels = {
+    r32: 'Round of 32',
+    r16: 'Round of 16',
+    qf: 'Quarter-Final',
+    sf: 'Semi-Final',
+    third: '3rd Place',
+    final: 'Final',
+  };
+  return labels[type] || type.replace(/_/g, ' ').toUpperCase() || 'Knockout';
 }
+
+function getScore(game) {
+  const home = game.home_score;
+  const away = game.away_score;
+  if (home === 'null' || away === 'null') return null;
+  return { home: home ?? '-', away: away ?? '-' };
+}
+
+// ── Standings logic ──────────────────────────────────────────────
 
 function sortTeams(teams) {
   return [...teams].sort((a, b) => {
-    const ptsDiff = Number(b.pts) - Number(a.pts);
-    if (ptsDiff !== 0) return ptsDiff;
-    const gdDiff = Number(b.gd) - Number(a.gd);
-    if (gdDiff !== 0) return gdDiff;
+    const pts = Number(b.pts) - Number(a.pts);
+    if (pts) return pts;
+    const gd = Number(b.gd) - Number(a.gd);
+    if (gd) return gd;
     return Number(b.gf) - Number(a.gf);
   });
 }
 
-function renderTeamCell(teamId) {
-  const team = teamsMap[teamId];
-  if (!team) return `<span>Team ${teamId}</span>`;
-  return `
-    <div class="team-cell">
-      <img src="${team.flag}" alt="" loading="lazy" width="24" height="16">
-      <span>${team.name_en}</span>
-    </div>`;
+function computeThirdPlaceRankings(groups) {
+  const thirds = groups.map((g) => {
+    const sorted = sortTeams(g.teams);
+    const third = sorted[2];
+    return third
+      ? {
+          ...third,
+          group: g.name,
+          team: state.teamsMap[third.team_id],
+        }
+      : null;
+  }).filter(Boolean);
+
+  return thirds.sort((a, b) => {
+    const pts = Number(b.pts) - Number(a.pts);
+    if (pts) return pts;
+    const gd = Number(b.gd) - Number(a.gd);
+    if (gd) return gd;
+    return Number(b.gf) - Number(a.gf);
+  });
 }
 
-function renderStandings(groups) {
-  const sorted = [...groups].sort(
-    (a, b) => GROUP_ORDER.indexOf(a.name) - GROUP_ORDER.indexOf(b.name)
+function buildTeamStatusMap(groups, thirdRankings) {
+  const map = {};
+  const thirdQualified = new Set(
+    thirdRankings.slice(0, 8).map((t) => t.team_id)
   );
 
-  return sorted
-    .map((group) => {
-      const teams = sortTeams(group.teams);
-      const rows = teams
-        .map((t, i) => {
-          const rank = i + 1;
-          const rowClass =
-            rank <= 2 ? 'qualified' : rank === 3 ? 'third-place' : '';
-          const gd = Number(t.gd);
-          const gdClass = gd > 0 ? 'gd-positive' : gd < 0 ? 'gd-negative' : '';
+  groups.forEach((group) => {
+    const sorted = sortTeams(group.teams);
+    sorted.forEach((team, i) => {
+      const rank = i + 1;
+      let zone, statusLabel, statusClass;
 
-          return `
-            <tr class="${rowClass}">
-              <td class="rank">${rank}</td>
-              <td>${renderTeamCell(t.team_id)}</td>
-              <td>${t.mp}</td>
-              <td>${t.w}</td>
-              <td>${t.d}</td>
-              <td>${t.l}</td>
-              <td>${t.gf}</td>
-              <td>${t.ga}</td>
-              <td class="${gdClass}">${gd > 0 ? '+' : ''}${t.gd}</td>
-              <td class="pts">${t.pts}</td>
-            </tr>`;
-        })
-        .join('');
+      if (rank <= 2) {
+        zone = 'zone-r32';
+        statusLabel = 'R32';
+        statusClass = 'r32';
+      } else if (rank === 3) {
+        if (thirdQualified.has(team.team_id)) {
+          zone = 'zone-third-in';
+          statusLabel = 'R32';
+          statusClass = 'third-in';
+        } else {
+          zone = 'zone-third-out';
+          statusLabel = 'OUT';
+          statusClass = 'third-out';
+        }
+      } else {
+        zone = 'zone-elim';
+        statusLabel = 'OUT';
+        statusClass = 'elim';
+      }
 
+      map[team.team_id] = { zone, statusLabel, statusClass, rank, group: group.name };
+    });
+  });
+
+  return map;
+}
+
+// ── Render helpers ───────────────────────────────────────────────
+
+function teamFlag(teamId) {
+  const t = state.teamsMap[teamId];
+  return t?.flag || '';
+}
+
+function teamName(teamId, fallback) {
+  return state.teamsMap[teamId]?.name_en || fallback || 'TBD';
+}
+
+function renderMatchRow(game) {
+  const phase = getMatchPhase(game);
+  const start = parseGameDate(game.local_date);
+  const score = getScore(game);
+  const elapsed = getElapsedDisplay(game);
+  const homeFlag = teamFlag(game.home_team_id);
+  const awayFlag = teamFlag(game.away_team_id);
+  const homeName = game.home_team_name_en || teamName(game.home_team_id);
+  const awayName = game.away_team_name_en || teamName(game.away_team_id);
+
+  let countdownText = '';
+  let countdownClass = 'match-countdown';
+
+  if (phase === 'live') {
+    countdownText = elapsed ? `LIVE ${elapsed}` : 'LIVE';
+    countdownClass += ' live-text';
+  } else if (phase === 'upcoming') {
+    const diff = start - new Date();
+    countdownText = diff > 0 ? `Starts in ${formatCountdown(diff)}` : 'Starting soon';
+    countdownClass += '';
+  } else {
+    countdownText = 'Full Time';
+    countdownClass += ' finished-text';
+  }
+
+  const scoreHtml = score
+    ? `<span class="match-score-display">${score.home}<span class="sep">–</span>${score.away}</span>`
+    : `<span class="match-score-display" style="font-size:1rem;color:var(--text-dim)">vs</span>`;
+
+  const badgeClass =
+    phase === 'live' ? 'live' : phase === 'upcoming' ? 'upcoming' : 'ft';
+  const badgeText =
+    phase === 'live' ? (elapsed || 'LIVE') : phase === 'upcoming' ? 'Upcoming' : 'FT';
+
+  return `
+    <article class="match-row ${phase}" data-game-id="${game.id}">
+      <div class="match-time-col">
+        <time class="match-kickoff" datetime="${start.toISOString()}">${formatKickoff(start)}</time>
+        <span class="${countdownClass}" data-countdown="${game.id}">${countdownText}</span>
+      </div>
+      <div class="match-info-col">
+        <span class="match-stage-label">${getStageLabel(game)}</span>
+        <div class="match-teams-row">
+          <span class="match-team">
+            ${homeFlag ? `<img src="${homeFlag}" alt="" loading="lazy" width="28" height="20">` : ''}
+            ${homeName}
+          </span>
+          <span class="match-vs">vs</span>
+          <span class="match-team">
+            ${awayFlag ? `<img src="${awayFlag}" alt="" loading="lazy" width="28" height="20">` : ''}
+            ${awayName}
+          </span>
+        </div>
+      </div>
+      <div class="match-score-col">
+        ${scoreHtml}
+        <span class="match-minute-badge ${badgeClass}">${badgeText}</span>
+      </div>
+    </article>`;
+}
+
+function renderToday() {
+  const now = new Date();
+  const todayGames = state.games
+    .filter((g) => isSameCalendarDay(parseGameDate(g.local_date), now))
+    .sort((a, b) => parseGameDate(a.local_date) - parseGameDate(b.local_date));
+
+  $('#today-title').textContent = formatTodayTitle();
+  $('#today-meta').textContent =
+    todayGames.length === 0
+      ? 'No matches scheduled today'
+      : `${todayGames.length} match${todayGames.length !== 1 ? 'es' : ''} · Local time`;
+
+  const container = $('#today-timeline');
+  $('#today-loading')?.remove();
+
+  if (todayGames.length === 0) {
+    container.innerHTML = `<p class="today-empty">No World Cup matches on the schedule for today. Check back on match days.</p>`;
+    return;
+  }
+
+  container.innerHTML = todayGames.map(renderMatchRow).join('');
+}
+
+function renderLiveBanner() {
+  const liveGames = state.games.filter(isGameLive);
+  const banner = $('#live-banner');
+  const inner = $('#live-banner-matches');
+
+  if (liveGames.length === 0) {
+    banner.hidden = true;
+    return;
+  }
+
+  banner.hidden = false;
+  inner.innerHTML = liveGames
+    .map((g) => {
+      const score = getScore(g);
+      const elapsed = getElapsedDisplay(g) || 'LIVE';
+      const home = g.home_team_name_en || teamName(g.home_team_id);
+      const away = g.away_team_name_en || teamName(g.away_team_id);
+      const scoreStr = score ? `${score.home}–${score.away}` : 'vs';
       return `
-        <div class="group-card">
-          <div class="group-header"><h3>Group ${group.name}</h3></div>
-          <table class="standings-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Team</th>
-                <th>MP</th>
-                <th>W</th>
-                <th>D</th>
-                <th>L</th>
-                <th>GF</th>
-                <th>GA</th>
-                <th>GD</th>
-                <th>Pts</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+        <div class="live-ticker-match">
+          <span class="minute">${elapsed}</span>
+          <span>${home}</span>
+          <span class="score">${scoreStr}</span>
+          <span>${away}</span>
         </div>`;
     })
     .join('');
 }
 
-function renderMatchCard(game) {
-  const status = getMatchStatus(game);
-  const isLive = status.class === 'live';
-  const homeTeam = teamsMap[game.home_team_id];
-  const awayTeam = teamsMap[game.away_team_id];
-  const homeFlag = homeTeam?.flag || '';
-  const awayFlag = awayTeam?.flag || '';
-  const homeName = game.home_team_name_en || homeTeam?.name_en || 'TBD';
-  const awayName = game.away_team_name_en || awayTeam?.name_en || 'TBD';
-  const homeScore = game.home_score ?? '-';
-  const awayScore = game.away_score ?? '-';
-  const showScore = game.finished === 'TRUE' || isLive;
+function renderHeaderStats() {
+  const now = new Date();
+  const todayCount = state.games.filter((g) =>
+    isSameCalendarDay(parseGameDate(g.local_date), now)
+  ).length;
+  const liveCount = state.games.filter(isGameLive).length;
+  const upcomingToday = state.games.filter(
+    (g) =>
+      isSameCalendarDay(parseGameDate(g.local_date), now) &&
+      getMatchPhase(g) === 'upcoming'
+  ).length;
+
+  $('#header-stats').innerHTML = `
+    <span class="stat-chip ${liveCount ? 'live' : ''}">
+      ${liveCount ? '<span class="pulse"></span>' : ''}
+      <strong>${liveCount}</strong> live
+    </span>
+    <span class="stat-chip"><strong>${todayCount}</strong> today</span>
+    <span class="stat-chip"><strong>${upcomingToday}</strong> upcoming</span>`;
+
+  const liveInd = $('#live-indicator');
+  liveInd.hidden = liveCount === 0;
+  $('#live-count-label').textContent = `${liveCount} Live`;
+}
+
+function renderRankRow(team, rank, status) {
+  const gd = Number(team.gd);
+  const gdClass = gd > 0 ? 'gd-pos' : gd < 0 ? 'gd-neg' : '';
+  const flag = teamFlag(team.team_id);
+  const name = teamName(team.team_id);
+  const barWidth = ((5 - rank) / 4) * 100;
 
   return `
-    <div class="match-card ${isLive ? 'live' : status.class === 'upcoming' ? 'upcoming' : ''}">
-      <div class="match-meta">
-        <span class="match-stage">${getStageLabel(game)}</span>
-        <span class="match-status ${status.class}">${status.label}</span>
+    <div class="rank-row ${status.zone}" title="${status.statusLabel === 'R32' && status.rank === 3 ? 'Advances as a top-8 third-place team' : status.statusLabel === 'OUT' ? 'Eliminated' : 'Advances to Round of 32'}">
+      <span class="rank-pos">${rank}</span>
+      <div class="rank-team">
+        ${flag ? `<img src="${flag}" alt="" loading="lazy">` : ''}
+        <span class="rank-team-name">${name}</span>
+        <span class="rank-status ${status.statusClass}">${status.statusLabel}</span>
       </div>
-      <div class="match-teams">
-        <div class="team">
-          ${homeFlag ? `<img src="${homeFlag}" alt="" loading="lazy">` : ''}
-          <span class="team-name">${homeName}</span>
-        </div>
-        <div class="score-block">
-          <div class="score">
-            ${showScore ? `${homeScore}<span class="score-sep"> – </span>${awayScore}` : 'vs'}
-          </div>
-          <span class="match-time">${formatMatchTime(game.local_date)}</span>
-        </div>
-        <div class="team">
-          ${awayFlag ? `<img src="${awayFlag}" alt="" loading="lazy">` : ''}
-          <span class="team-name">${awayName}</span>
-        </div>
+      <span class="rank-stat">${team.mp}</span>
+      <span class="rank-stat">${team.w}</span>
+      <span class="rank-stat">${team.d}</span>
+      <span class="rank-stat">${team.l}</span>
+      <span class="rank-stat ${gdClass}">${gd > 0 ? '+' : ''}${team.gd}</span>
+      <span class="rank-stat pts">${team.pts}</span>
+      <div class="rank-bar-wrap" aria-hidden="true">
+        <div class="rank-bar" style="width:${barWidth}%"></div>
       </div>
     </div>`;
 }
 
-function getRelevantMatches(games) {
-  const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-  const threeDaysAhead = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+function renderGroupCardFixed(group) {
+  const sorted = sortTeams(group.teams);
+  const rowHtml = sorted
+    .map((t, i) => renderRankRow(t, i + 1, state.teamStatusMap[t.team_id]))
+    .join('');
 
-  return games
-    .filter((g) => {
-      const date = parseGameDate(g.local_date);
-      const live = isGameLive(g);
-      const upcoming = isGameUpcoming(g);
-      const recent =
-        g.finished === 'TRUE' && date >= threeDaysAgo && date <= now;
-      const soon = upcoming && date <= threeDaysAhead;
-      return live || soon || (recent && date >= threeDaysAgo);
-    })
-    .sort((a, b) => {
-      const aLive = isGameLive(a) ? 0 : 1;
-      const bLive = isGameLive(b) ? 0 : 1;
-      if (aLive !== bLive) return aLive - bLive;
-      return parseGameDate(a.local_date) - parseGameDate(b.local_date);
-    })
-    .slice(0, 12);
+  const r32Rows = sorted
+    .slice(0, 2)
+    .map((t, i) => renderRankRow(t, i + 1, state.teamStatusMap[t.team_id]))
+    .join('');
+  const thirdRow = sorted[2]
+    ? renderRankRow(sorted[2], 3, state.teamStatusMap[sorted[2].team_id])
+    : '';
+  const elimRow = sorted[3]
+    ? renderRankRow(sorted[3], 4, state.teamStatusMap[sorted[3].team_id])
+    : '';
+
+  return `
+    <div class="group-standings-card">
+      <div class="group-standings-head">
+        <h3>Group ${group.name}</h3>
+        <span>Final standings</span>
+      </div>
+      <div class="rank-header">
+        <span>#</span><span>Team</span>
+        <span>MP</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span>
+      </div>
+      <div class="rank-rows">
+        <div class="zone-divider"><span class="line"></span>Round of 32 — Top 2<span class="line"></span></div>
+        ${r32Rows}
+        <div class="zone-divider"><span class="line"></span>3rd Place — Best 8 advance<span class="line"></span></div>
+        ${thirdRow}
+        <div class="zone-divider"><span class="line"></span>Eliminated<span class="line"></span></div>
+        ${elimRow}
+      </div>
+    </div>`;
 }
 
-function renderMatches(games) {
-  const relevant = getRelevantMatches(games);
-  hasLiveMatches = games.some(isGameLive);
+function renderStandings() {
+  const layout = $('#standings-layout');
+  $('#standings-loading')?.remove();
 
-  const liveSection = $('#live-section');
-  const matchesGrid = $('#matches-grid');
-  const liveIndicator = $('#live-indicator');
+  const groups =
+    state.selectedGroup === 'ALL'
+      ? [...state.groups].sort(
+          (a, b) => GROUP_ORDER.indexOf(a.name) - GROUP_ORDER.indexOf(b.name)
+        )
+      : state.groups.filter((g) => g.name === state.selectedGroup);
 
-  if (relevant.length === 0) {
-    liveSection.hidden = true;
-    liveIndicator.hidden = true;
+  const single = state.selectedGroup !== 'ALL';
+  layout.innerHTML = `<div class="standings-grid ${single ? 'single' : ''}">${groups.map(renderGroupCardFixed).join('')}</div>`;
+}
+
+function renderGroupTabs() {
+  const tabs = $('#group-tabs');
+  const buttons = [
+    `<button class="group-tab ${state.selectedGroup === 'ALL' ? 'active' : ''}" data-group="ALL" role="tab">All Groups</button>`,
+    ...GROUP_ORDER.map(
+      (g) =>
+        `<button class="group-tab ${state.selectedGroup === g ? 'active' : ''}" data-group="${g}" role="tab">Group ${g}</button>`
+    ),
+  ];
+  tabs.innerHTML = buttons.join('');
+
+  tabs.querySelectorAll('.group-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.selectedGroup = btn.dataset.group;
+      tabs.querySelectorAll('.group-tab').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderStandings();
+    });
+  });
+}
+
+function renderThirdPlace() {
+  const board = $('#third-place-board');
+  const rankings = state.thirdPlaceRankings;
+
+  if (!rankings.length) {
+    board.innerHTML = '<p class="today-empty">No third-place data available.</p>';
     return;
   }
 
-  liveSection.hidden = false;
-  liveIndicator.hidden = !hasLiveMatches;
-  matchesGrid.innerHTML = relevant.map(renderMatchCard).join('');
+  let tableRows = '';
+  rankings.forEach((t, i) => {
+    if (i === 8) {
+      tableRows += `<tr class="cutoff-row"><td colspan="10">▲ Top 8 advance to Round of 32 · Bottom 4 eliminated ▼</td></tr>`;
+    }
+    const rank = i + 1;
+    const qualified = rank <= 8;
+    const gd = Number(t.gd);
+    const gdClass = gd > 0 ? 'gd-pos' : gd < 0 ? 'gd-neg' : '';
+    const name = t.team?.name_en || teamName(t.team_id);
+    const flag = t.team?.flag || teamFlag(t.team_id);
+    tableRows += `
+      <tr class="${qualified ? 'qualified-row' : 'eliminated-row'}">
+        <td class="third-rank">${rank}</td>
+        <td>
+          <div class="third-team-cell">
+            ${flag ? `<img src="${flag}" alt="" loading="lazy">` : ''}
+            <span class="name">${name}</span>
+            <span class="group-tag">Grp ${t.group}</span>
+          </div>
+        </td>
+        <td class="stat">${t.mp}</td>
+        <td class="stat">${t.w}</td>
+        <td class="stat">${t.d}</td>
+        <td class="stat">${t.l}</td>
+        <td class="stat">${t.gf}</td>
+        <td class="stat">${t.ga}</td>
+        <td class="stat ${gdClass}">${gd > 0 ? '+' : ''}${t.gd}</td>
+        <td class="stat pts">${t.pts}</td>
+      </tr>`;
+  });
+
+  board.innerHTML = `
+    <table class="third-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>MP</th>
+          <th>W</th>
+          <th>D</th>
+          <th>L</th>
+          <th>GF</th>
+          <th>GA</th>
+          <th>GD</th>
+          <th>Pts</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>`;
 }
 
-function showError(message) {
-  $('#groups-grid').innerHTML = `
-    <div class="error-state">
-      <p>${message}</p>
-      <button onclick="loadData()">Try Again</button>
-    </div>`;
+// ── Live tick (every second) ─────────────────────────────────────
+
+function tick() {
+  $('#live-clock').textContent = new Date().toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  if (state.lastFetch) {
+    const ago = Math.floor((Date.now() - state.lastFetch) / 1000);
+    const sync = $('#sync-status');
+    sync.textContent = `Synced ${ago}s ago`;
+    sync.className = 'sync-status ' + (ago < 10 ? 'fresh' : ago < 30 ? '' : 'stale');
+  }
+
+  $$('[data-countdown]').forEach((el) => {
+    const gameId = el.dataset.countdown;
+    const game = state.games.find((g) => g.id === gameId);
+    if (!game) return;
+
+    const phase = getMatchPhase(game);
+    if (phase === 'upcoming') {
+      const diff = parseGameDate(game.local_date) - new Date();
+      el.textContent = diff > 0 ? `Starts in ${formatCountdown(diff)}` : 'Starting soon';
+    } else if (phase === 'live') {
+      const elapsed = getElapsedDisplay(game);
+      el.textContent = elapsed ? `LIVE ${elapsed}` : 'LIVE';
+      el.className = 'match-countdown live-text';
+    }
+  });
+
+  if (state.hasLive) {
+    renderLiveBanner();
+    $$('.match-row.live').forEach((row) => {
+      const game = state.games.find((g) => g.id === row.dataset.gameId);
+      if (!game) return;
+      const badge = row.querySelector('.match-minute-badge');
+      const elapsed = getElapsedDisplay(game);
+      if (badge && elapsed) badge.textContent = elapsed;
+      const score = getScore(game);
+      if (score) {
+        const display = row.querySelector('.match-score-display');
+        if (display) {
+          display.innerHTML = `${score.home}<span class="sep">–</span>${score.away}`;
+        }
+      }
+    });
+  }
 }
 
-function updateLastUpdated() {
-  const el = $('#last-updated');
-  el.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+// ── Polling ──────────────────────────────────────────────────────
+
+function getPollInterval() {
+  if (state.hasLive) return POLL.LIVE;
+  if (state.hasSoon) return POLL.SOON;
+  return POLL.IDLE;
 }
 
-function scheduleRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  const interval = hasLiveMatches ? LIVE_REFRESH_INTERVAL_MS : REFRESH_INTERVAL_MS;
-  refreshTimer = setInterval(loadData, interval);
+function schedulePoll() {
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = setInterval(loadData, getPollInterval());
 }
+
+function updateLiveFlags() {
+  state.hasLive = state.games.some(isGameLive);
+  state.hasSoon = state.games.some(isGameSoon);
+}
+
+// ── Data load ────────────────────────────────────────────────────
 
 async function loadData() {
   const btn = $('#refresh-btn');
-  btn.classList.add('spinning');
+  btn?.classList.add('spinning');
 
   try {
     const [teamsData, groupsData, gamesData] = await Promise.all([
@@ -251,24 +614,62 @@ async function loadData() {
       fetchJSON('games'),
     ]);
 
-    teamsMap = Object.fromEntries(
-      teamsData.teams.map((t) => [t.id, t])
-    );
+    state.teamsMap = Object.fromEntries(teamsData.teams.map((t) => [t.id, t]));
+    state.groups = groupsData.groups;
+    state.games = gamesData.games;
+    state.lastFetch = Date.now();
 
-    $('#loading-state')?.remove();
-    $('#groups-grid').innerHTML = renderStandings(groupsData.groups);
-    renderMatches(gamesData.games);
-    updateLastUpdated();
-    scheduleRefresh();
+    state.thirdPlaceRankings = computeThirdPlaceRankings(state.groups);
+    state.teamStatusMap = buildTeamStatusMap(state.groups, state.thirdPlaceRankings);
+    updateLiveFlags();
+
+    renderHeaderStats();
+    renderLiveBanner();
+    renderToday();
+    renderStandings();
+    renderThirdPlace();
+
+    schedulePoll();
   } catch (err) {
     console.error(err);
-    if (!$('.group-card')) {
-      showError('Could not load standings. Check your connection and try again.');
+    if (!state.groups.length) {
+      $('#standings-layout').innerHTML = `
+        <div class="error-state">
+          <p>Could not load data. Check your connection.</p>
+          <button onclick="loadData()">Try Again</button>
+        </div>`;
     }
   } finally {
-    btn.classList.remove('spinning');
+    btn?.classList.remove('spinning');
   }
 }
 
-$('#refresh-btn').addEventListener('click', loadData);
+// ── Nav scroll spy ───────────────────────────────────────────────
+
+function initNav() {
+  const links = $$('.nav-link');
+  const sections = ['today', 'standings', 'third-place'].map((id) => document.getElementById(id));
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('active'));
+          const active = document.querySelector(`.nav-link[data-section="${entry.target.id}"]`);
+          active?.classList.add('active');
+        }
+      });
+    },
+    { rootMargin: '-40% 0px -50% 0px' }
+  );
+
+  sections.forEach((s) => s && observer.observe(s));
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+
+$('#refresh-btn')?.addEventListener('click', loadData);
+renderGroupTabs();
+initNav();
+state.tickTimer = setInterval(tick, 1000);
 loadData();
