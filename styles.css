@@ -468,44 +468,109 @@ a:hover { text-decoration: underline; }
   opacity: 0.6;
 }
 
-.se-goals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  padding: 0.45rem 0.65rem 0;
+.goal-events {
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 0.65rem 0.35rem;
 }
 
-.se-goals.live-goals .goal-chip {
-  animation: goal-pop 0.4s ease-out;
+.goal-events.live-goals .goal-event:last-child {
+  animation: goal-pop 0.45s ease-out;
 }
 
 @keyframes goal-pop {
-  from { transform: scale(0.9); opacity: 0.5; }
-  to { transform: scale(1); opacity: 1; }
+  from { transform: translateX(-4px); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-.goal-chip {
+.goal-events-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.62rem;
-  font-weight: 600;
-  padding: 0.15rem 0.4rem;
-  border-radius: 3px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.goal-count {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  padding: 0.05rem 0.35rem;
+  border-radius: 99px;
+  font-size: 0.58rem;
+}
+
+.goal-event {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 0.45rem;
+  align-items: start;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.goal-event:last-child { border-bottom: none; }
+
+.ge-min {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.1rem;
+}
+
+.ge-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.ge-scorer {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ge-detail {
+  font-size: 0.64rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.ge-detail strong {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.ge-assist {
+  font-size: 0.6rem;
+  color: var(--dim);
+}
+
+.ge-badge {
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.12rem 0.3rem;
+  border-radius: 2px;
   background: var(--card2);
   border: 1px solid var(--border);
   color: var(--muted);
+  margin-top: 0.1rem;
 }
 
-.goal-chip.home { border-color: rgba(255, 45, 45, 0.25); }
-.goal-chip.away { border-color: rgba(255, 140, 0, 0.25); }
+.ge-badge.penalty { color: var(--orange); border-color: rgba(255, 140, 0, 0.35); }
+.ge-badge.header { color: #7eb8ff; border-color: rgba(126, 184, 255, 0.3); }
+.ge-badge.own_goal { color: var(--dim); }
 
-.goal-min {
-  font-weight: 800;
-  color: var(--text);
-  margin-right: 0.15rem;
-}
+.goal-event.home .ge-scorer { color: #ffb4b4; }
+.goal-event.away .ge-scorer { color: #ffd49a; }
 
-.se-card.finished .se-goals {
-  border-top: 1px solid var(--border);
-  margin-top: 0.15rem;
+.se-card.live .goal-events {
+  background: rgba(255, 45, 45, 0.04);
 }
 
 /* ── Bracket ── */

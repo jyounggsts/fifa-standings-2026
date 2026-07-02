@@ -1,4 +1,7 @@
 const API_BASE = 'https://worldcup26.ir/get';
+const ESPN_API = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+const FIELD_LENGTH_M = 105;
+const FIELD_WIDTH_M = 68;
 const GROUP_ORDER = 'ABCDEFGHIJKL'.split('');
 
 const POLL = { LIVE: 5_000, WINDOW: 8_000, SOON: 12_000, IDLE: 30_000 };
@@ -25,6 +28,8 @@ const state = {
   hasLive: false,
   hasSoon: false,
   hasKickoffWindow: false,
+  espnGoals: {},
+  espnEventIds: {},
   lastFetch: null,
   pollTimer: null,
   tickTimer: null,
@@ -203,17 +208,167 @@ function getMatchPhase(game) {
   return 'upcoming';
 }
 
-function parseScorers(raw) {
+function parseScorerEntry(text) {
+  const ownGoal = /\(OG\)/i.test(text);
+  const penalty = /\(p\)|\(P\)/i.test(text);
+  const minuteMatch = text.match(/(\d+(?:\+\d+)?)'/);
+  const player = text
+    .replace(/\s*\d+(?:\+\d+)?'.*/, '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .trim();
+  return {
+    player,
+    minute: minuteMatch ? minuteMatch[1] : '',
+    side: null,
+    type: ownGoal ? 'own_goal' : penalty ? 'penalty' : 'open_play',
+    distance: ownGoal ? null : penalty ? '12 yds (11 m)' : null,
+    assist: null,
+    shotDetail: ownGoal ? 'Own goal' : penalty ? 'Penalty' : 'Goal',
+  };
+}
+
+function parseScorers(raw, side) {
   if (!raw || raw === 'null') return [];
   const matches = String(raw).match(/"([^"]+)"/g);
   if (!matches) return [];
-  return matches.map((entry) => {
-    const text = entry.replace(/"/g, '');
-    const hit = text.match(/^(.+?)\s+(\d+(?:\+\d+)?)'$/);
-    return hit
-      ? { player: hit[1].trim(), minute: hit[2] }
-      : { player: text.trim(), minute: '' };
-  }).sort((a, b) => parseInt(a.minute, 10) - parseInt(b.minute, 10));
+  return matches.map((entry) => ({ ...parseScorerEntry(entry.replace(/"/g, '')), side }));
+}
+
+function normalizeTeamKey(name) {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function formatEspnDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+async function fetchEspnJSON(path) {
+  const res = await fetch(`${ESPN_API}${path}`);
+  if (!res.ok) throw new Error(`ESPN fetch failed: ${res.status}`);
+  return res.json();
+}
+
+function matchGameToEspnEvent(game, events) {
+  const home = normalizeTeamKey(game.home_team_name_en || teamName(game.home_team_id));
+  const away = normalizeTeamKey(game.away_team_name_en || teamName(game.away_team_id));
+  return (events || []).find((event) => {
+    const comps = event.competitions?.[0]?.competitors || [];
+    const espnHome = comps.find((c) => c.homeAway === 'home');
+    const espnAway = comps.find((c) => c.homeAway === 'away');
+    return normalizeTeamKey(espnHome?.team?.displayName) === home
+      && normalizeTeamKey(espnAway?.team?.displayName) === away;
+  });
+}
+
+function calcShotDistance(x, y) {
+  const dx = ((100 - x) / 100) * FIELD_LENGTH_M;
+  const dy = ((y - 50) / 100) * FIELD_WIDTH_M;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function formatDistance(meters) {
+  const yards = Math.round(meters * 1.09361);
+  const m = Math.round(meters);
+  return `${yards} yds (${m} m)`;
+}
+
+function parseDistanceFromText(text) {
+  const t = (text || '').toLowerCase();
+  if (t.includes('six yard')) return '6 yds (5 m)';
+  if (t.includes('centre of the box') || t.includes('center of the box')) return '12 yds (11 m)';
+  if (t.includes('edge of the box')) return '18 yds (16 m)';
+  if (t.includes('outside the box')) return '22 yds (20 m)';
+  if (t.includes('penalty')) return '12 yds (11 m)';
+  return null;
+}
+
+function parseAssistFromText(text) {
+  const hit = (text || '').match(/assisted by ([^.]+?)(?: with|\.|$)/i);
+  return hit ? hit[1].trim() : null;
+}
+
+function parseShotDetail(text, typeText) {
+  const t = (text || '').toLowerCase();
+  if (typeText?.toLowerCase().includes('header') || t.includes('header')) {
+    const zone = t.match(/header from ([^.]+)/i);
+    return zone ? `Header · ${zone[1].trim()}` : 'Header';
+  }
+  const shot = t.match(/(left|right) footed shot from ([^.]+)/i);
+  if (shot) return `${shot[1][0].toUpperCase()}${shot[1].slice(1)} foot · ${shot[2].trim()}`;
+  if (t.includes('penalty')) return 'Penalty';
+  return typeText || 'Goal';
+}
+
+function parseEspnScoringPlay(play, espnHomeTeamId) {
+  const participants = play.participants || [];
+  const scorerPart = participants.find((p) => p.type !== 'assist') || participants[0];
+  const assistPart = participants.find((p) => p.type === 'assist');
+  const side = String(play.team?.id) === String(espnHomeTeamId) ? 'home' : 'away';
+  const distance = play.fieldPositionX != null && play.fieldPositionY != null
+    ? formatDistance(calcShotDistance(play.fieldPositionX, play.fieldPositionY))
+    : parseDistanceFromText(play.text);
+  return {
+    player: scorerPart?.athlete?.displayName || 'Unknown',
+    minute: (play.clock?.displayValue || '').replace(/'/g, ''),
+    side,
+    type: play.type?.text?.toLowerCase().includes('header') ? 'header'
+      : play.type?.text?.toLowerCase().includes('penalty') ? 'penalty' : 'open_play',
+    distance,
+    assist: assistPart?.athlete?.displayName || parseAssistFromText(play.text),
+    shotDetail: parseShotDetail(play.text, play.type?.text),
+  };
+}
+
+async function fetchEspnGoalsForGame(gameId, espnEventId) {
+  const summary = await fetchEspnJSON(`/summary?event=${espnEventId}`);
+  const homeTeamId = summary.header?.competitions?.[0]?.competitors
+    ?.find((c) => c.homeAway === 'home')?.id;
+  state.espnGoals[gameId] = (summary.keyEvents || [])
+    .filter((e) => e.scoringPlay)
+    .map((e) => parseEspnScoringPlay(e, homeTeamId));
+}
+
+async function enrichGamesWithEspn() {
+  const now = new Date();
+  const targets = state.games.filter((g) => {
+    const phase = getMatchPhase(g);
+    return phase === 'live' || isSameCalendarDay(parseGameDate(g.local_date), now);
+  });
+  if (!targets.length) return;
+
+  const dates = [...new Set(targets.map((g) => formatEspnDate(parseGameDate(g.local_date))))];
+  const boards = await Promise.all(
+    dates.map((d) => fetchEspnJSON(`/scoreboard?dates=${d}`).catch(() => ({ events: [] }))),
+  );
+  const allEvents = boards.flatMap((b) => b.events || []);
+
+  await Promise.all(targets.map(async (game) => {
+    const espnEvent = matchGameToEspnEvent(game, allEvents);
+    if (!espnEvent) return;
+    state.espnEventIds[game.id] = espnEvent.id;
+    try {
+      await fetchEspnGoalsForGame(game.id, espnEvent.id);
+    } catch {
+      /* ESPN enrichment is best-effort */
+    }
+  }));
+}
+
+function getGameGoals(game) {
+  const espn = state.espnGoals[game.id];
+  if (espn?.length) return espn;
+  const goals = [
+    ...parseScorers(game.home_scorers, 'home'),
+    ...parseScorers(game.away_scorers, 'away'),
+  ];
+  return goals.sort((a, b) => {
+    const ma = parseInt(String(a.minute).split('+')[0], 10) || 0;
+    const mb = parseInt(String(b.minute).split('+')[0], 10) || 0;
+    return ma - mb;
+  });
 }
 
 function getMatchMinuteNumber(game) {
@@ -250,18 +405,28 @@ function getProgressPercent(game) {
   return Math.min(Math.round((min / 90) * 100), 100);
 }
 
-function renderGoalChips(game, live = false) {
-  const homeGoals = parseScorers(game.home_scorers);
-  const awayGoals = parseScorers(game.away_scorers);
-  const chips = [
-    ...homeGoals.map((g) => ({ ...g, side: 'home' })),
-    ...awayGoals.map((g) => ({ ...g, side: 'away' })),
-  ].sort((a, b) => parseInt(a.minute, 10) - parseInt(b.minute, 10));
-  if (!chips.length) return '';
-  const cls = live ? 'se-goals live-goals' : 'se-goals';
-  return `<div class="${cls}" data-goals="${game.id}">${chips.map((g) =>
-    `<span class="goal-chip ${g.side}"><span class="goal-min">${g.minute}'</span> ${escapeHtml(g.player)}</span>`
-  ).join('')}</div>`;
+function renderGoalEvents(game, live = false) {
+  const goals = getGameGoals(game);
+  if (!goals.length) return '';
+  const cls = live ? 'goal-events live-goals' : 'goal-events';
+  const rows = goals.map((g) => `
+    <div class="goal-event ${g.side}">
+      <span class="ge-min">${g.minute}'</span>
+      <div class="ge-body">
+        <span class="ge-scorer">${escapeHtml(g.player)}</span>
+        <span class="ge-detail">${escapeHtml(g.shotDetail)}${g.distance ? ` · <strong>${g.distance}</strong>` : ''}</span>
+        ${g.assist ? `<span class="ge-assist">Assist: ${escapeHtml(g.assist)}</span>` : ''}
+      </div>
+      <span class="ge-badge ${g.type}">${g.type === 'penalty' ? 'PEN' : g.type === 'own_goal' ? 'OG' : g.type === 'header' ? 'HDR' : 'GOAL'}</span>
+    </div>`).join('');
+  return `
+    <div class="${cls}" data-goals="${game.id}">
+      <div class="goal-events-head">
+        <span>Goal Events</span>
+        <span class="goal-count">${goals.length}</span>
+      </div>
+      ${rows}
+    </div>`;
 }
 
 function escapeHtml(str) {
@@ -514,7 +679,7 @@ function renderStreamCard(game) {
   const pensHtml = score?.pens
     ? `<span class="se-pens">(${score.pens.home}-${score.pens.away} pens)</span>` : '';
   const trackerHtml = phase === 'live' ? renderLiveTracker(game) : '';
-  const goalsHtml = phase === 'live' ? renderGoalChips(game, true) : renderGoalChips(game);
+  const goalsHtml = renderGoalEvents(game, phase === 'live');
 
   return `
     <article class="se-card ${phase}" data-game-id="${game.id}">
@@ -863,7 +1028,7 @@ function updateLiveCard(card, game, elapsed) {
   }
 
   const goalsEl = card.querySelector(`[data-goals="${game.id}"]`);
-  const goalsHtml = renderGoalChips(game, true);
+  const goalsHtml = renderGoalEvents(game, true);
   if (goalsHtml && !goalsEl) {
     card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', goalsHtml);
   } else if (goalsHtml && goalsEl) {
@@ -909,6 +1074,7 @@ async function loadData() {
     state.thirdPlaceRankings = computeThirdPlaceRankings(state.groups);
     state.teamStatusMap = buildTeamStatusMap(state.groups, state.thirdPlaceRankings);
     updateLiveFlags();
+    await enrichGamesWithEspn();
 
     renderHeaderStats();
     renderLiveBanner();
