@@ -3,103 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Live FIFA World Cup 2026 standings, scores, and elimination tracker - updates every second.">
-  <title>FIFA World Cup 2026 - Live Center</title><!-- v3 -->
+  <meta name="description" content="FIFA World Cup 2026 live scores, bracket, and elimination tracker.">
+  <title>WC26 Live | World Cup 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <span class="brand-mark-inner">26</span>
-        </div>
-        <div>
-          <h1>World Cup Live Center</h1>
-          <p class="subtitle">Standings | Schedule | Eliminations</p>
-        </div>
-      </div>
-      <div class="header-stats" id="header-stats"></div>
-      <div class="status-bar">
-        <span class="live-indicator" id="live-indicator" hidden>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="logo">
+        <span class="logo-icon">WC</span>
+        <span class="logo-text">26<span class="logo-live">LIVE</span></span>
+      </a>
+      <nav class="topnav" aria-label="Main">
+        <a href="#live" class="topnav-link active" data-section="live">Live</a>
+        <a href="#bracket" class="topnav-link" data-section="bracket">Bracket</a>
+        <a href="#eliminated" class="topnav-link" data-section="eliminated">Eliminated</a>
+        <a href="#standings" class="topnav-link" data-section="standings">Standings</a>
+      </nav>
+      <div class="topbar-right">
+        <span class="live-pill" id="live-indicator" hidden>
           <span class="pulse"></span>
-          <span id="live-count-label">Live</span>
+          <span id="live-count-label">0 LIVE</span>
         </span>
-        <span class="clock" id="live-clock">--:--:--</span>
-        <span class="sync-status" id="sync-status">Syncing...</span>
-        <button class="refresh-btn" id="refresh-btn" title="Refresh now" aria-label="Refresh data">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        <span class="top-clock" id="live-clock">--:--:--</span>
+        <span class="sync-tag" id="sync-status">Syncing</span>
+        <button class="icon-btn" id="refresh-btn" title="Refresh" aria-label="Refresh">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
         </button>
       </div>
     </div>
-    <nav class="section-nav" aria-label="Sections">
-      <a href="#today" class="nav-link active" data-section="today">Today</a>
-      <a href="#standings" class="nav-link" data-section="standings">Standings</a>
-      <a href="#third-place" class="nav-link" data-section="third-place">3rd Place Race</a>
-    </nav>
   </header>
 
-  <div class="live-banner" id="live-banner" hidden>
-    <div class="live-banner-inner" id="live-banner-matches"></div>
+  <div class="ticker" id="live-banner" hidden>
+    <div class="ticker-inner" id="live-banner-matches"></div>
   </div>
 
-  <main class="main">
-    <section class="panel" id="today">
-      <div class="panel-head">
-        <div>
-          <p class="panel-eyebrow">Matchday Schedule</p>
-          <h2 class="panel-title" id="today-title">Today</h2>
-        </div>
-        <p class="panel-meta" id="today-meta"></p>
+  <main class="page">
+    <section class="block" id="live">
+      <div class="block-head">
+        <h2 class="block-title"><span class="dot-live"></span> Live &amp; Today</h2>
+        <p class="block-sub" id="today-meta">Loading...</p>
       </div>
-      <div class="today-timeline" id="today-timeline">
-        <div class="loading-state" id="today-loading">
-          <div class="spinner"></div>
-          <p>Loading today's matches…</p>
+      <div class="card-grid" id="today-timeline">
+        <div class="loading" id="today-loading"><div class="spinner"></div><p>Loading matches...</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="bracket">
+      <div class="block-head">
+        <h2 class="block-title">Knockout Bracket</h2>
+        <div class="legend-row">
+          <span class="leg winner-leg">Winner</span>
+          <span class="leg elim-leg">Eliminated</span>
+          <span class="leg risk-leg">On the brink</span>
+          <span class="leg live-leg">Live</span>
+        </div>
+      </div>
+      <div class="bracket-wrap">
+        <div class="bracket" id="bracket-board">
+          <div class="loading"><div class="spinner"></div></div>
         </div>
       </div>
     </section>
 
-    <section class="panel" id="standings">
-      <div class="panel-head">
-        <div>
-          <p class="panel-eyebrow">Group Stage Final Table</p>
-          <h2 class="panel-title">Interactive Standings</h2>
+    <div class="split-row">
+      <section class="block block-half" id="eliminated">
+        <div class="block-head">
+          <h2 class="block-title">Eliminated</h2>
+          <span class="count-badge" id="elim-count">0</span>
         </div>
-        <div class="zone-legend">
-          <span class="zone-pill r32">Round of 32</span>
-          <span class="zone-pill third-in">3rd - In (Top 8)</span>
-          <span class="zone-pill third-out">3rd - Out</span>
-          <span class="zone-pill out">Eliminated</span>
-        </div>
-      </div>
-      <div class="group-tabs" id="group-tabs" role="tablist"></div>
-      <div class="standings-layout" id="standings-layout">
-        <div class="loading-state" id="standings-loading">
-          <div class="spinner"></div>
-          <p>Loading standings…</p>
-        </div>
-      </div>
-    </section>
+        <div class="elim-list" id="elim-list"></div>
+      </section>
 
-    <section class="panel" id="third-place">
-      <div class="panel-head">
-        <div>
-          <p class="panel-eyebrow">Best 8 of 12 advance</p>
-          <h2 class="panel-title">3rd Place Tracker</h2>
+      <section class="block block-half" id="at-risk">
+        <div class="block-head">
+          <h2 class="block-title">On the Brink</h2>
+          <span class="count-badge risk" id="risk-count">0</span>
         </div>
-        <p class="panel-meta">Ranked by Pts, GD, GF</p>
+        <p class="block-sub">Teams playing next — lose and go home</p>
+        <div class="risk-list" id="risk-list"></div>
+      </section>
+    </div>
+
+    <section class="block" id="standings">
+      <div class="block-head">
+        <h2 class="block-title">Group Standings</h2>
+        <div class="group-tabs" id="group-tabs" role="tablist"></div>
       </div>
-      <div class="third-place-board" id="third-place-board"></div>
+      <div id="standings-layout">
+        <div class="loading" id="standings-loading"><div class="spinner"></div></div>
+      </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <p>Data from <a href="https://worldcup26.ir" target="_blank" rel="noopener">worldcup26.ir</a> · Live sync every 5s during matches</p>
-    <p class="footer-note"><a href="https://jyounggsts.github.io/fifa-standings-2026/" target="_blank" rel="noopener">jyounggsts.github.io/fifa-standings-2026</a></p>
+  <footer class="foot">
+    <p>Data from <a href="https://worldcup26.ir" target="_blank" rel="noopener">worldcup26.ir</a></p>
   </footer>
 
   <script src="app.js"></script>
