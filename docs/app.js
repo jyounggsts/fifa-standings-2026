@@ -119,13 +119,15 @@ function isApiLaggingLive(game) {
 }
 
 function shouldShowScore(game) {
-  if (game.finished === 'TRUE') return scoresArePlayable(game);
+  if (isDefinitelyFinished(game)) return scoresArePlayable(game);
   if (isGameLive(game)) return scoresArePlayable(game);
   if (isNotStarted(game)) return false;
   return scoresArePlayable(game);
 }
 
 function isGameLive(game) {
+  if (isDefinitelyFinished(game)) return false;
+  if (isPrematureFinish(game)) return true;
   if (game.finished === 'TRUE') return false;
   const e = normalizeElapsed(game.time_elapsed);
   if (e === 'finished') return false;
@@ -179,10 +181,112 @@ function getUpcomingStatus(game) {
   return 'Starting soon';
 }
 
+function isDefinitelyFinished(game) {
+  if (game.finished !== 'TRUE') return false;
+  const e = normalizeElapsed(game.time_elapsed);
+  if (e === 'finished') return true;
+  return minutesSinceKickoff(game) > 150;
+}
+
+function isPrematureFinish(game) {
+  if (game.finished !== 'TRUE') return false;
+  const e = normalizeElapsed(game.time_elapsed);
+  if (e === 'finished') return false;
+  const mins = minutesSinceKickoff(game);
+  return mins >= 0 && mins < 105;
+}
+
 function getMatchPhase(game) {
+  if (isPrematureFinish(game) || isGameLive(game)) return 'live';
+  if (isDefinitelyFinished(game)) return 'finished';
   if (game.finished === 'TRUE') return 'finished';
-  if (isGameLive(game)) return 'live';
   return 'upcoming';
+}
+
+function parseScorers(raw) {
+  if (!raw || raw === 'null') return [];
+  const matches = String(raw).match(/"([^"]+)"/g);
+  if (!matches) return [];
+  return matches.map((entry) => {
+    const text = entry.replace(/"/g, '');
+    const hit = text.match(/^(.+?)\s+(\d+(?:\+\d+)?)'$/);
+    return hit
+      ? { player: hit[1].trim(), minute: hit[2] }
+      : { player: text.trim(), minute: '' };
+  }).sort((a, b) => parseInt(a.minute, 10) - parseInt(b.minute, 10));
+}
+
+function getMatchMinuteNumber(game) {
+  const elapsed = getElapsedDisplay(game);
+  if (!elapsed || elapsed === 'LIVE') {
+    const est = estimateMinute(game);
+    if (est === 'HT') return 45;
+    const m = parseInt(est, 10);
+    return Number.isNaN(m) ? 0 : m;
+  }
+  if (elapsed === 'HT') return 45;
+  if (elapsed === '90+') return 90;
+  const stoppage = elapsed.match(/(\d+)\+(\d+)/);
+  if (stoppage) return parseInt(stoppage[1], 10) + parseInt(stoppage[2], 10);
+  const m = parseInt(elapsed, 10);
+  return Number.isNaN(m) ? 0 : m;
+}
+
+function getMatchPeriod(game) {
+  const e = normalizeElapsed(game.time_elapsed);
+  if (e === 'ht' || e === 'halftime') return 'Half Time';
+  if (e === 'extratime' || e === 'extra') return 'Extra Time';
+  if (e === 'penalties') return 'Penalties';
+  if (getElapsedDisplay(game) === 'HT') return 'Half Time';
+  const mins = minutesSinceKickoff(game);
+  if (mins <= 45) return '1st Half';
+  if (mins <= 60) return 'Half Time';
+  return '2nd Half';
+}
+
+function getProgressPercent(game) {
+  if (getMatchPeriod(game) === 'Half Time') return 50;
+  const min = getMatchMinuteNumber(game);
+  return Math.min(Math.round((min / 90) * 100), 100);
+}
+
+function renderGoalChips(game, live = false) {
+  const homeGoals = parseScorers(game.home_scorers);
+  const awayGoals = parseScorers(game.away_scorers);
+  const chips = [
+    ...homeGoals.map((g) => ({ ...g, side: 'home' })),
+    ...awayGoals.map((g) => ({ ...g, side: 'away' })),
+  ].sort((a, b) => parseInt(a.minute, 10) - parseInt(b.minute, 10));
+  if (!chips.length) return '';
+  const cls = live ? 'se-goals live-goals' : 'se-goals';
+  return `<div class="${cls}" data-goals="${game.id}">${chips.map((g) =>
+    `<span class="goal-chip ${g.side}"><span class="goal-min">${g.minute}'</span> ${escapeHtml(g.player)}</span>`
+  ).join('')}</div>`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderLiveTracker(game) {
+  const period = getMatchPeriod(game);
+  const minute = getElapsedDisplay(game) || 'LIVE';
+  const pct = getProgressPercent(game);
+  return `
+    <div class="se-tracker" data-tracker="${game.id}">
+      <div class="se-track-top">
+        <span class="se-period" data-live-period="${game.id}">${period}</span>
+        <span class="se-match-clock" data-live-minute="${game.id}">${minute}</span>
+      </div>
+      <div class="se-progress">
+        <div class="se-progress-fill" data-live-progress="${game.id}" style="width:${pct}%"></div>
+        <span class="se-progress-ht" aria-hidden="true"></span>
+      </div>
+    </div>`;
 }
 
 function getStageLabel(game) {
@@ -396,37 +500,48 @@ function renderStreamCard(game) {
   const awayName = game.away_team_name_en || teamName(awayId) || 'TBD';
 
   let footText = '';
-  if (phase === 'live') footText = elapsed ? `LIVE · ${elapsed}` : 'LIVE';
-  else if (phase === 'upcoming') footText = getUpcomingStatus(game);
-  else footText = 'Full Time';
+  let statusBadge = '';
+  if (phase === 'live') {
+    footText = elapsed ? `LIVE · ${elapsed}` : 'LIVE';
+    statusBadge = '<span class="se-live-tag">LIVE</span>';
+  } else if (phase === 'upcoming') {
+    footText = getUpcomingStatus(game);
+  } else {
+    footText = 'Full Time';
+    statusBadge = '<span class="se-ft-tag">FT</span>';
+  }
 
   const pensHtml = score?.pens
     ? `<span class="se-pens">(${score.pens.home}-${score.pens.away} pens)</span>` : '';
+  const trackerHtml = phase === 'live' ? renderLiveTracker(game) : '';
+  const goalsHtml = phase === 'live' ? renderGoalChips(game, true) : renderGoalChips(game);
 
   return `
     <article class="se-card ${phase}" data-game-id="${game.id}">
       <div class="se-card-bar"></div>
       <div class="se-card-top">
         <span class="se-league">${getStageLabel(game)}</span>
-        ${phase === 'live' ? '<span class="se-live-tag">LIVE</span>' : ''}
+        ${statusBadge}
         <span class="se-kick">${formatKickoff(start)}</span>
       </div>
+      ${trackerHtml}
       <div class="se-body">
-        <div class="se-side">
+        <div class="se-side ${phase === 'live' ? 'live-side' : ''}">
           ${flagImg(homeId)}
           <span class="se-team">${homeName}</span>
-          <span class="se-score">${score ? score.home : ''}</span>
+          <span class="se-score" data-home-score="${game.id}">${score ? score.home : ''}</span>
         </div>
         <div class="se-mid">
           <span class="se-vs">${score ? '-' : 'vs'}</span>
           ${pensHtml}
         </div>
-        <div class="se-side">
+        <div class="se-side ${phase === 'live' ? 'live-side' : ''}">
           ${flagImg(awayId)}
           <span class="se-team">${awayName}</span>
-          <span class="se-score">${score ? score.away : ''}</span>
+          <span class="se-score" data-away-score="${game.id}">${score ? score.away : ''}</span>
         </div>
       </div>
+      ${goalsHtml}
       <div class="se-foot ${phase === 'live' ? 'live-text' : ''}" data-countdown="${game.id}">${footText}</div>
     </article>`;
 }
@@ -694,7 +809,8 @@ function tick() {
     if (phase === 'upcoming') {
       el.textContent = getUpcomingStatus(game);
       el.className = 'se-foot';
-      card?.classList.remove('live');
+      card?.classList.remove('live', 'finished');
+      card?.classList.add('upcoming');
     } else if (phase === 'live') {
       liveNow = true;
       const elapsed = getElapsedDisplay(game);
@@ -702,30 +818,60 @@ function tick() {
       el.className = 'se-foot live-text';
       card?.classList.add('live');
       card?.classList.remove('finished', 'upcoming');
-
-      if (card?.classList.contains('se-card')) {
-        const score = getScore(game);
-        const scores = card.querySelectorAll('.se-score');
-        const vs = card.querySelector('.se-vs');
-        if (score) {
-          if (scores[0]) scores[0].textContent = score.home;
-          if (scores[1]) scores[1].textContent = score.away;
-          if (vs) vs.textContent = '-';
-        }
-        const liveTag = card.querySelector('.se-live-tag');
-        if (!liveTag) {
-          card.querySelector('.se-card-top')?.insertAdjacentHTML(
-            'beforeend',
-            '<span class="se-live-tag">LIVE</span>',
-          );
-        }
-      }
+      updateLiveCard(card, game, elapsed);
+    } else if (phase === 'finished') {
+      el.textContent = 'Full Time';
+      el.className = 'se-foot';
+      card?.classList.remove('live', 'upcoming');
+      card?.classList.add('finished');
+      card?.querySelector('.se-live-tag')?.remove();
     }
   });
 
   if (liveNow || state.hasLive) {
     renderLiveBanner();
     renderHeaderStats();
+  }
+}
+
+function updateLiveCard(card, game, elapsed) {
+  if (!card?.classList.contains('se-card')) return;
+
+  const periodEl = card.querySelector(`[data-live-period="${game.id}"]`);
+  const minuteEl = card.querySelector(`[data-live-minute="${game.id}"]`);
+  const progressEl = card.querySelector(`[data-live-progress="${game.id}"]`);
+  if (periodEl) periodEl.textContent = getMatchPeriod(game);
+  if (minuteEl) minuteEl.textContent = elapsed || 'LIVE';
+  if (progressEl) progressEl.style.width = `${getProgressPercent(game)}%`;
+
+  const score = getScore(game);
+  const homeScore = card.querySelector(`[data-home-score="${game.id}"]`);
+  const awayScore = card.querySelector(`[data-away-score="${game.id}"]`);
+  const vs = card.querySelector('.se-vs');
+  if (score) {
+    if (homeScore) homeScore.textContent = score.home;
+    if (awayScore) awayScore.textContent = score.away;
+    if (vs) vs.textContent = '-';
+  }
+
+  if (!card.querySelector('.se-live-tag')) {
+    card.querySelector('.se-ft-tag')?.remove();
+    card.querySelector('.se-card-top')?.insertAdjacentHTML(
+      'beforeend',
+      '<span class="se-live-tag">LIVE</span>',
+    );
+  }
+
+  const goalsEl = card.querySelector(`[data-goals="${game.id}"]`);
+  const goalsHtml = renderGoalChips(game, true);
+  if (goalsHtml && !goalsEl) {
+    card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', goalsHtml);
+  } else if (goalsHtml && goalsEl) {
+    goalsEl.outerHTML = goalsHtml;
+  }
+
+  if (!card.querySelector(`[data-tracker="${game.id}"]`)) {
+    card.querySelector('.se-card-top')?.insertAdjacentHTML('afterend', renderLiveTracker(game));
   }
 }
 
