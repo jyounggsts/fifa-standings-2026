@@ -1,8 +1,0 @@
----
-pid: 8864
-cwd: "C:\Users\JYoung\Documents\Claude\Projects\Fifa Standings Project"
-command: "Start-Sleep -Seconds 30; try { $r = Invoke-WebRequest -Uri 'https://jyounggsts.github.io/fifa-standings-2026/' -UseBasicParsing; \"Status: $($r.StatusCode); Length: $($r.Content.Length)\" } catch { \"Still 404\" }"
-started_at: 2026-07-02T15:36:58.515Z
-running_for_ms: 240004   
----
-Still 404
