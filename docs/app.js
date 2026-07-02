@@ -78,18 +78,33 @@ function normalizeElapsed(raw) {
   return (raw || '').toLowerCase().replace(/\s+/g, '');
 }
 
+function isNotStarted(game) {
+  const e = normalizeElapsed(game.time_elapsed);
+  return !e || e === 'notstarted';
+}
+
+function isScoreNull(val) {
+  return val === null || val === undefined || val === 'null' || val === '';
+}
+
+function scoresArePlayable(game) {
+  return !isScoreNull(game.home_score) && !isScoreNull(game.away_score);
+}
+
+/** API uses 0-0 placeholders before kickoff — only trust scores when match has begun or ended */
+function shouldShowScore(game) {
+  if (game.finished === 'TRUE') return scoresArePlayable(game);
+  if (isNotStarted(game)) return false;
+  return scoresArePlayable(game);
+}
+
 function isGameLive(game) {
   if (game.finished === 'TRUE') return false;
   const e = normalizeElapsed(game.time_elapsed);
-  if (e === 'notstarted' || e === 'finished' || !e) {
-    const start = parseGameDate(game.local_date);
-    const now = new Date();
-    const end = new Date(start.getTime() + 2.5 * 60 * 60 * 1000);
-    const inWindow = now >= start && now <= end;
-    const hasScore = game.home_score !== 'null' && game.away_score !== 'null';
-    return inWindow && hasScore;
-  }
-  return true;
+  if (e === 'notstarted' || e === 'finished' || !e) return false;
+  if (e === 'ht' || e === 'halftime') return true;
+  if (/\d/.test(e)) return true;
+  return false;
 }
 
 function isGameSoon(game) {
@@ -101,30 +116,18 @@ function isGameSoon(game) {
 function getElapsedDisplay(game) {
   const e = normalizeElapsed(game.time_elapsed);
   if (game.finished === 'TRUE' || e === 'finished') return 'FT';
-  if (e === 'notstarted' || !e) {
-    if (isGameLive(game)) return estimateMinute(game);
-    return null;
-  }
+  if (e === 'notstarted' || !e) return null;
   if (e === 'ht' || e === 'halftime') return 'HT';
-  const match = e.match(/(\d+)/);
-  return match ? `${match[1]}′` : e.toUpperCase();
-}
-
-function estimateMinute(game) {
-  const start = parseGameDate(game.local_date);
-  const mins = Math.floor((Date.now() - start.getTime()) / 60_000);
-  if (mins < 0) return null;
-  if (mins <= 45) return `${mins}′`;
-  if (mins <= 60) return 'HT';
-  if (mins <= 105) return `${mins - 15}′`;
-  return '90+′';
+  const stoppage = e.match(/(\d+)\+(\d+)/);
+  if (stoppage) return `${stoppage[1]}+${stoppage[2]}′`;
+  const minute = e.match(/(\d+)/);
+  return minute ? `${minute[1]}′` : e.toUpperCase();
 }
 
 function getMatchPhase(game) {
   if (game.finished === 'TRUE') return 'finished';
   if (isGameLive(game)) return 'live';
-  if (parseGameDate(game.local_date) > new Date()) return 'upcoming';
-  return 'finished';
+  return 'upcoming';
 }
 
 function getStageLabel(game) {
@@ -142,10 +145,41 @@ function getStageLabel(game) {
 }
 
 function getScore(game) {
+  if (!shouldShowScore(game)) return null;
+
   const home = game.home_score;
   const away = game.away_score;
-  if (home === 'null' || away === 'null') return null;
-  return { home: home ?? '-', away: away ?? '-' };
+  const result = { home: String(home), away: String(away) };
+
+  const hPen = game.home_penalty_score;
+  const aPen = game.away_penalty_score;
+  if (
+    game.finished === 'TRUE' &&
+    !isScoreNull(hPen) &&
+    !isScoreNull(aPen)
+  ) {
+    result.pens = { home: String(hPen), away: String(aPen) };
+  }
+
+  return result;
+}
+
+function formatScoreHtml(score) {
+  if (!score) {
+    return '<span class="match-score-display score-vs">vs</span>';
+  }
+  let inner = `${score.home}<span class="sep">–</span>${score.away}`;
+  if (score.pens) {
+    inner += `<span class="score-pens"> (${score.pens.home}–${score.pens.away} pens)</span>`;
+  }
+  return `<span class="match-score-display">${inner}</span>`;
+}
+
+function formatScoreCompact(score) {
+  if (!score) return 'vs';
+  let s = `${score.home}–${score.away}`;
+  if (score.pens) s += ` (${score.pens.home}–${score.pens.away} pens)`;
+  return s;
 }
 
 // ── Standings logic ──────────────────────────────────────────────
@@ -250,16 +284,20 @@ function renderMatchRow(game) {
     countdownClass += ' live-text';
   } else if (phase === 'upcoming') {
     const diff = start - new Date();
-    countdownText = diff > 0 ? `Starts in ${formatCountdown(diff)}` : 'Starting soon';
+    if (diff > 0) {
+      countdownText = `Starts in ${formatCountdown(diff)}`;
+    } else if (isNotStarted(game)) {
+      countdownText = 'Awaiting kickoff';
+    } else {
+      countdownText = 'Starting soon';
+    }
     countdownClass += '';
   } else {
     countdownText = 'Full Time';
     countdownClass += ' finished-text';
   }
 
-  const scoreHtml = score
-    ? `<span class="match-score-display">${score.home}<span class="sep">–</span>${score.away}</span>`
-    : `<span class="match-score-display" style="font-size:1rem;color:var(--text-dim)">vs</span>`;
+  const scoreHtml = formatScoreHtml(score);
 
   const badgeClass =
     phase === 'live' ? 'live' : phase === 'upcoming' ? 'upcoming' : 'ft';
@@ -333,7 +371,7 @@ function renderLiveBanner() {
       const elapsed = getElapsedDisplay(g) || 'LIVE';
       const home = g.home_team_name_en || teamName(g.home_team_id);
       const away = g.away_team_name_en || teamName(g.away_team_id);
-      const scoreStr = score ? `${score.home}–${score.away}` : 'vs';
+      const scoreStr = formatScoreCompact(score);
       return `
         <div class="live-ticker-match">
           <span class="minute">${elapsed}</span>
@@ -378,7 +416,7 @@ function renderRankRow(team, rank, status) {
   const barWidth = ((5 - rank) / 4) * 100;
 
   return `
-    <div class="rank-row ${status.zone}" title="${status.statusLabel === 'R32' && status.rank === 3 ? 'Advances as a top-8 third-place team' : status.statusLabel === 'OUT' ? 'Eliminated' : 'Advances to Round of 32'}">
+    <div class="rank-row ${status.zone}" title="${status.statusLabel === 'R32' && rank === 3 ? 'Advances as a top-8 third-place team' : status.statusLabel === 'OUT' ? 'Eliminated' : 'Advances to Round of 32'}">
       <span class="rank-pos">${rank}</span>
       <div class="rank-team">
         ${flag ? `<img src="${flag}" alt="" loading="lazy">` : ''}
@@ -572,12 +610,13 @@ function tick() {
       const badge = row.querySelector('.match-minute-badge');
       const elapsed = getElapsedDisplay(game);
       if (badge && elapsed) badge.textContent = elapsed;
-      const score = getScore(game);
-      if (score) {
-        const display = row.querySelector('.match-score-display');
-        if (display) {
-          display.innerHTML = `${score.home}<span class="sep">–</span>${score.away}`;
-        }
+      const rowScore = row.querySelector('.match-score-col');
+      if (rowScore) {
+        const existing = rowScore.querySelector('.match-score-display, .score-vs');
+        const badge = rowScore.querySelector('.match-minute-badge');
+        const scoreHtml = formatScoreHtml(getScore(game));
+        if (existing) existing.outerHTML = scoreHtml;
+        else if (badge) badge.insertAdjacentHTML('beforebegin', scoreHtml);
       }
     });
   }
