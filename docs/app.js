@@ -30,6 +30,8 @@ const state = {
   hasKickoffWindow: false,
   espnGoals: {},
   espnEventIds: {},
+  espnKickoffs: {},
+  userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   lastFetch: null,
   pollTimer: null,
   tickTimer: null,
@@ -47,20 +49,128 @@ async function fetchJSON(endpoint) {
 }
 
 // ── Date / time ──────────────────────────────────────────────────
+// API local_date is stadium-local kickoff, not the user's timezone.
 
-function parseGameDate(dateStr) {
+const STADIUM_TIMEZONES = {
+  1: 'America/Mexico_City',
+  2: 'America/Mexico_City',
+  3: 'America/Monterrey',
+  4: 'America/Chicago',
+  5: 'America/Chicago',
+  6: 'America/Chicago',
+  7: 'America/New_York',
+  8: 'America/New_York',
+  9: 'America/New_York',
+  10: 'America/New_York',
+  11: 'America/New_York',
+  12: 'America/Toronto',
+  13: 'America/Vancouver',
+  14: 'America/Los_Angeles',
+  15: 'America/Los_Angeles',
+  16: 'America/Los_Angeles',
+};
+
+function getStadiumTimezone(stadiumId) {
+  return STADIUM_TIMEZONES[String(stadiumId)] || 'America/New_York';
+}
+
+function getTimeParts(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(date);
+  const pick = (type) => parts.find((p) => p.type === type)?.value;
+  return {
+    year: Number(pick('year')),
+    month: Number(pick('month')),
+    day: Number(pick('day')),
+    hour: Number(pick('hour')),
+    minute: Number(pick('minute')),
+  };
+}
+
+function compareDateParts(target, actual) {
+  if (actual.year !== target.year) return actual.year - target.year;
+  if (actual.month !== target.month) return actual.month - target.month;
+  if (actual.day !== target.day) return actual.day - target.day;
+  if (actual.hour !== target.hour) return actual.hour - target.hour;
+  return actual.minute - target.minute;
+}
+
+function parseInTimeZone(dateStr, timeZone) {
   const [datePart, timePart] = dateStr.split(' ');
   const [month, day, year] = datePart.split('/').map(Number);
   const [hour, minute] = (timePart || '00:00').split(':').map(Number);
-  return new Date(year, month - 1, day, hour, minute, 0);
+  const target = { year, month, day, hour, minute };
+  const guess = Date.UTC(year, month - 1, day, hour, minute);
+  let low = guess - 26 * 3_600_000;
+  let high = guess + 26 * 3_600_000;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const cmp = compareDateParts(target, getTimeParts(new Date(mid), timeZone));
+    if (cmp === 0) return new Date(mid);
+    if (cmp < 0) low = mid + 60_000;
+    else high = mid - 60_000;
+  }
+  return new Date(guess);
+}
+
+function parseGameKickoff(game) {
+  if (!game) return new Date();
+  if (state.espnKickoffs[game.id]) return state.espnKickoffs[game.id];
+  if (!game.local_date) return new Date();
+  return parseInTimeZone(game.local_date, getStadiumTimezone(game.stadium_id));
 }
 
 function isSameCalendarDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+function isKickoffToday(game) {
+  return isSameCalendarDay(parseGameKickoff(game), new Date());
+}
+
 function formatKickoff(date) {
-  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+}
+
+function formatStadiumKickoff(game) {
+  const kickoff = parseGameKickoff(game);
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: getStadiumTimezone(game.stadium_id),
+  }).format(kickoff);
+  const zone = new Intl.DateTimeFormat('en-US', {
+    timeZone: getStadiumTimezone(game.stadium_id),
+    timeZoneName: 'short',
+  }).formatToParts(kickoff).find((p) => p.type === 'timeZoneName')?.value || '';
+  return `${time} ${zone}`;
+}
+
+function kickoffLabelsDiffer(game) {
+  const kickoff = parseGameKickoff(game);
+  const user = getTimeParts(kickoff, state.userTimezone);
+  const venue = getTimeParts(kickoff, getStadiumTimezone(game.stadium_id));
+  return user.hour !== venue.hour || user.minute !== venue.minute
+    || user.day !== venue.day || user.month !== venue.month;
+}
+
+function formatKickoffDisplay(game) {
+  const kickoff = parseGameKickoff(game);
+  const userLabel = formatKickoff(kickoff);
+  if (!kickoffLabelsDiffer(game)) return userLabel;
+  return `${userLabel} <span class="se-kick-venue">(${formatStadiumKickoff(game)} at venue)</span>`;
 }
 
 function formatCountdown(ms) {
@@ -80,7 +190,7 @@ function normalizeElapsed(raw) {
 }
 
 function minutesSinceKickoff(game) {
-  return Math.floor((Date.now() - parseGameDate(game.local_date).getTime()) / 60_000);
+  return Math.floor((Date.now() - parseGameKickoff(game).getTime()) / 60_000);
 }
 
 function isWithinMatchWindow(game) {
@@ -142,13 +252,13 @@ function isGameLive(game) {
 
 function isGameInKickoffWindow(game) {
   if (game.finished === 'TRUE') return false;
-  const diff = parseGameDate(game.local_date) - Date.now();
+  const diff = parseGameKickoff(game) - Date.now();
   return diff <= 30 * 60 * 1000 && diff >= -2.5 * 60 * 60 * 1000;
 }
 
 function isGameSoon(game) {
   if (game.finished === 'TRUE' || isGameLive(game)) return false;
-  const diff = parseGameDate(game.local_date) - Date.now();
+  const diff = parseGameKickoff(game) - Date.now();
   return diff > 0 && diff <= 2 * 60 * 60 * 1000;
 }
 
@@ -175,7 +285,7 @@ function getElapsedDisplay(game) {
 }
 
 function getUpcomingStatus(game) {
-  const diff = parseGameDate(game.local_date) - Date.now();
+  const diff = parseGameKickoff(game) - Date.now();
   if (diff > 60_000) return `Starts in ${formatCountdown(diff)}`;
   if (diff > 0) return `Kickoff in ${formatCountdown(diff)}`;
   if (isNotStarted(game)) {
@@ -243,6 +353,15 @@ function formatEspnDate(date) {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}${m}${d}`;
+}
+
+function espnScoreboardDates(kickoff) {
+  const dates = new Set([formatEspnDate(kickoff)]);
+  const utcY = kickoff.getUTCFullYear();
+  const utcM = String(kickoff.getUTCMonth() + 1).padStart(2, '0');
+  const utcD = String(kickoff.getUTCDate()).padStart(2, '0');
+  dates.add(`${utcY}${utcM}${utcD}`);
+  return [...dates];
 }
 
 async function fetchEspnJSON(path) {
@@ -335,11 +454,11 @@ async function enrichGamesWithEspn() {
   const now = new Date();
   const targets = state.games.filter((g) => {
     const phase = getMatchPhase(g);
-    return phase === 'live' || isSameCalendarDay(parseGameDate(g.local_date), now);
+    return phase === 'live' || isKickoffToday(g);
   });
   if (!targets.length) return;
 
-  const dates = [...new Set(targets.map((g) => formatEspnDate(parseGameDate(g.local_date))))];
+  const dates = [...new Set(targets.flatMap((g) => espnScoreboardDates(parseGameKickoff(g))))];
   const boards = await Promise.all(
     dates.map((d) => fetchEspnJSON(`/scoreboard?dates=${d}`).catch(() => ({ events: [] }))),
   );
@@ -349,6 +468,7 @@ async function enrichGamesWithEspn() {
     const espnEvent = matchGameToEspnEvent(game, allEvents);
     if (!espnEvent) return;
     state.espnEventIds[game.id] = espnEvent.id;
+    if (espnEvent.date) state.espnKickoffs[game.id] = new Date(espnEvent.date);
     try {
       await fetchEspnGoalsForGame(game.id, espnEvent.id);
     } catch {
@@ -627,7 +747,7 @@ function buildAtRisk() {
 
   state.games
     .filter((g) => koTypes.includes(g.type) && g.finished !== 'TRUE')
-    .sort((a, b) => parseGameDate(a.local_date) - parseGameDate(b.local_date))
+    .sort((a, b) => parseGameKickoff(a) - parseGameKickoff(b))
     .forEach((game) => {
       [['home', game.home_team_id, game.home_team_name_en],
        ['away', game.away_team_id, game.away_team_name_en]].forEach(([, id, name]) => {
@@ -658,7 +778,6 @@ function renderStreamCard(game) {
   const phase = getMatchPhase(game);
   const score = getScore(game);
   const elapsed = getElapsedDisplay(game);
-  const start = parseGameDate(game.local_date);
   const homeId = game.home_team_id;
   const awayId = game.away_team_id;
   const homeName = game.home_team_name_en || teamName(homeId) || 'TBD';
@@ -687,7 +806,7 @@ function renderStreamCard(game) {
       <div class="se-card-top">
         <span class="se-league">${getStageLabel(game)}</span>
         ${statusBadge}
-        <span class="se-kick">${formatKickoff(start)}</span>
+        <span class="se-kick">${formatKickoffDisplay(game)}</span>
       </div>
       ${trackerHtml}
       <div class="se-body">
@@ -714,13 +833,16 @@ function renderStreamCard(game) {
 function renderToday() {
   const now = new Date();
   const todayGames = state.games
-    .filter((g) => isSameCalendarDay(parseGameDate(g.local_date), now))
-    .sort((a, b) => parseGameDate(a.local_date) - parseGameDate(b.local_date));
+    .filter((g) => isKickoffToday(g))
+    .sort((a, b) => parseGameKickoff(a) - parseGameKickoff(b));
 
   const meta = $('#today-meta');
   if (meta) {
+    const tz = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+      .formatToParts(new Date())
+      .find((p) => p.type === 'timeZoneName')?.value || '';
     meta.textContent = todayGames.length
-      ? `${todayGames.length} match${todayGames.length !== 1 ? 'es' : ''} today`
+      ? `${todayGames.length} match${todayGames.length !== 1 ? 'es' : ''} today · times in your timezone (${tz})`
       : 'No matches today';
   }
 
@@ -872,9 +994,8 @@ function renderAtRisk() {
   }
 
   list.innerHTML = risks.map((r) => {
-    const start = parseGameDate(r.date);
     const phase = r.phase;
-    const statusText = phase === 'live' ? 'LIVE NOW' : `Next: ${formatKickoff(start)}`;
+    const statusText = phase === 'live' ? 'LIVE NOW' : `Next: ${formatKickoffDisplay(r.match)}`;
     return `
       <div class="risk-item">
         ${r.flag ? `<img src="${r.flag}" alt="">` : '<span class="ph-flag"></span>'}
@@ -950,7 +1071,7 @@ function tick() {
   const clock = $('#live-clock');
   if (clock) {
     clock.textContent = new Date().toLocaleTimeString(undefined, {
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short',
     });
   }
 
