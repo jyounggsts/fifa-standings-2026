@@ -649,19 +649,6 @@ a:hover { text-decoration: underline; }
   font-size: 0.85rem;
 }
 
-.b-odds {
-  padding: 0.25rem 0.5rem 0.35rem;
-  font-size: 0.58rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  letter-spacing: 0.02em;
-}
-
-.b-odds .fav, .b-odds { color: inherit; }
-
 /* ── Bracket ── */
 .bracket-wrap {
   overflow-x: auto;
@@ -720,7 +707,7 @@ a:hover { text-decoration: underline; }
   border-radius: 4px;
   overflow: hidden;
   font-size: 0.72rem;
-  min-width: 152px;
+  min-width: 168px;
 }
 
 .b-match.live { border-color: var(--red); animation: bracketPulse 2s infinite; }
@@ -732,6 +719,10 @@ a:hover { text-decoration: underline; }
 }
 
 .b-match-id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
   font-size: 0.55rem;
   color: var(--dim);
   padding: 0.2rem 0.4rem;
@@ -739,6 +730,24 @@ a:hover { text-decoration: underline; }
   border-bottom: 1px solid var(--border);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.b-draw-ml {
+  font-size: 0.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  cursor: help;
+  text-transform: none;
+}
+
+.b-draw-ml.fav { color: #4ee6a0; }
+.b-draw-ml.dog { color: #ffb84d; }
+
+.b-match.live .b-draw-ml.live-line,
+.b-match.live .b-ml.live-line {
+  animation: odds-glow 2.5s ease-in-out infinite;
 }
 
 .b-team {
@@ -761,12 +770,25 @@ a:hover { text-decoration: underline; }
 
 .b-name {
   flex: 1;
+  min-width: 0;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.7rem;
 }
+
+.b-ml {
+  font-size: 0.62rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.b-ml.fav { color: #4ee6a0; }
+.b-ml.dog { color: #ffb84d; }
 
 .b-score {
   font-weight: 800;

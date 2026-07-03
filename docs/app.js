@@ -591,13 +591,25 @@ function syncScoreOdds(card, game, phase) {
   syncDrawEl(card, game, odds.moneyline.draw, phase);
 }
 
-function renderBracketOdds(game) {
-  const phase = getMatchPhase(game);
+function renderBracketMl(game, side, phase) {
+  if (phase === 'finished') return '';
   const odds = getGameOdds(game.id);
-  if (!odds || phase === 'finished') return '';
-  const parts = [odds.moneyline.home, odds.moneyline.draw, odds.moneyline.away].filter(Boolean);
-  if (!parts.length) return '';
-  return `<div class="b-odds" data-odds="${game.id}">${parts.join(' · ')}</div>`;
+  if (!odds) return '';
+  const val = side === 'home' ? odds.moneyline.home : odds.moneyline.away;
+  if (!val) return '';
+  const tone = getOddsTone(val);
+  const liveCls = phase === 'live' ? ' live-line' : '';
+  return `<span class="b-ml ${tone}${liveCls}" title="${escapeHtml(oddsLaymanTitle(val))}">${val}</span>`;
+}
+
+function renderBracketDrawMl(game, phase) {
+  if (phase === 'finished') return '';
+  const odds = getGameOdds(game.id);
+  if (!odds?.moneyline.draw) return '';
+  const val = odds.moneyline.draw;
+  const tone = getOddsTone(val);
+  const liveCls = phase === 'live' ? ' live-line' : '';
+  return `<span class="b-draw-ml ${tone}${liveCls}" title="${escapeHtml(oddsLaymanTitle(val))}">DRAW ${val}</span>`;
 }
 
 function calcShotDistance(x, y) {
@@ -1305,6 +1317,7 @@ function renderBracketTeam(game, side, winnerSide, phase) {
     <div class="${cls}">
       ${flagImg(teamId)}
       <span class="b-name">${name || 'TBD'}</span>
+      ${renderBracketMl(game, side, phase)}
       ${scoreVal !== '' ? `<span class="b-score">${scoreVal}</span>` : ''}
     </div>`;
 }
@@ -1314,10 +1327,12 @@ function renderBracketMatch(game) {
   const winnerSide = getMatchWinnerSide(game);
   return `
     <div class="b-match ${phase}" data-game-id="${game.id}">
-      <div class="b-match-id">${getStageLabel(game)} #${game.id}</div>
+      <div class="b-match-id">
+        <span>${getStageLabel(game)} #${game.id}</span>
+        ${renderBracketDrawMl(game, phase)}
+      </div>
       ${renderBracketTeam(game, 'home', winnerSide, phase)}
       ${renderBracketTeam(game, 'away', winnerSide, phase)}
-      ${renderBracketOdds(game)}
     </div>`;
 }
 
