@@ -35,6 +35,7 @@ const state = {
   gameOdds: {},
   gameBroadcasts: {},
   youtubeLive: null,
+  goalClips: null,
   userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   lastFetch: null,
   pollTimer: null,
@@ -74,6 +75,16 @@ async function fetchJSON(endpoint) {
 async function fetchYoutubeLiveCache() {
   try {
     const res = await fetch(`${DATA_BASE}/youtube-live.json`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function fetchGoalClipsCache() {
+  try {
+    const res = await fetch(`${DATA_BASE}/goal-clips.json`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -956,10 +967,22 @@ function getProgressPercent(game) {
   return Math.min(Math.round((min / 90) * 100), 100);
 }
 
-function goalsFingerprint(goals) {
-  return (goals || []).map((g) => [
-    g.side, g.minute, g.player, g.type, g.assist || '', g.distance || '', g.shotDetail || '',
-  ].join('|')).join(';');
+function goalClipKey(goal) {
+  return `${goal.side}|${goal.minute}|${goal.player}`;
+}
+
+function getGoalClip(gameId, goal) {
+  return state.goalClips?.games?.[gameId]?.goals?.[goalClipKey(goal)] || null;
+}
+
+function goalsFingerprint(goals, gameId) {
+  return (goals || []).map((g) => {
+    const clip = gameId ? getGoalClip(gameId, g) : null;
+    const clipRef = clip?.videoId || clip?.webUrl || '';
+    return [
+      g.side, g.minute, g.player, g.type, g.assist || '', g.distance || '', g.shotDetail || '', clipRef,
+    ].join('|');
+  }).join(';');
 }
 
 function goalBadgeLabel(type) {
@@ -969,7 +992,34 @@ function goalBadgeLabel(type) {
   return 'GOAL';
 }
 
-function renderGoalEventRow(g) {
+function renderGoalClip(gameId, goal) {
+  const clip = getGoalClip(gameId, goal);
+  if (!clip) return '';
+
+  if (clip.videoId) {
+    const thumb = clip.thumb || `https://i.ytimg.com/vi/${clip.videoId}/hqdefault.jpg`;
+    return `
+      <div class="ge-clip">
+        <button type="button" class="ge-clip-btn" data-yt="${clip.videoId}"
+                title="${escapeHtml(clip.title || 'Watch goal clip')}" aria-label="Play goal clip">
+          <img class="ge-clip-thumb" src="${thumb}" alt="" loading="lazy">
+          <span class="ge-clip-play">▶</span>
+        </button>
+      </div>`;
+  }
+
+  if (clip.webUrl) {
+    return `
+      <a class="ge-clip-link" href="${clip.webUrl}" target="_blank" rel="noopener noreferrer"
+         title="${escapeHtml(clip.title || 'Watch clip')}">
+        <span class="ge-clip-play">▶</span> Clip
+      </a>`;
+  }
+
+  return '';
+}
+
+function renderGoalEventRow(g, gameId) {
   return `
     <div class="goal-event ${g.side}">
       <span class="ge-min">${g.minute}'</span>
@@ -978,6 +1028,7 @@ function renderGoalEventRow(g) {
         <span class="ge-detail">${escapeHtml(g.shotDetail)}${g.distance ? ` · <strong>${g.distance}</strong>` : ''}</span>
         ${g.assist ? `<span class="ge-assist">Assist: ${escapeHtml(g.assist)}</span>` : ''}
       </div>
+      ${renderGoalClip(gameId, g)}
       <span class="ge-badge ${g.type}">${goalBadgeLabel(g.type)}</span>
     </div>`;
 }
@@ -990,7 +1041,7 @@ function animateNewGoalRow(row) {
 
 function syncGoalEvents(card, game, live = false) {
   const goals = getGameGoals(game);
-  const fp = goalsFingerprint(goals);
+  const fp = goalsFingerprint(goals, game.id);
   let el = card.querySelector(`[data-goals="${game.id}"]`);
 
   if (!goals.length) {
@@ -1003,7 +1054,7 @@ function syncGoalEvents(card, game, live = false) {
   const prevCount = Number(el?.dataset.goalsCount || 0);
   const canAppend = el
     && goals.length > prevCount
-    && goalsFingerprint(goals.slice(0, prevCount)) === el.dataset.goalsFp;
+    && goalsFingerprint(goals.slice(0, prevCount), game.id) === el.dataset.goalsFp;
 
   if (!el) {
     card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', renderGoalEvents(game, live));
@@ -1017,7 +1068,7 @@ function syncGoalEvents(card, game, live = false) {
 
   if (canAppend) {
     for (let i = prevCount; i < goals.length; i += 1) {
-      el.insertAdjacentHTML('beforeend', renderGoalEventRow(goals[i]));
+      el.insertAdjacentHTML('beforeend', renderGoalEventRow(goals[i], game.id));
       animateNewGoalRow(el.querySelector('.goal-event:last-child'));
     }
     const countEl = el.querySelector('.goal-count');
@@ -1028,7 +1079,7 @@ function syncGoalEvents(card, game, live = false) {
   }
 
   el.querySelectorAll('.goal-event').forEach((row) => row.remove());
-  el.insertAdjacentHTML('beforeend', goals.map((g) => renderGoalEventRow(g)).join(''));
+  el.insertAdjacentHTML('beforeend', goals.map((g) => renderGoalEventRow(g, game.id)).join(''));
   const countEl = el.querySelector('.goal-count');
   if (countEl) countEl.textContent = goals.length;
   el.dataset.goalsFp = fp;
@@ -1039,14 +1090,14 @@ function renderGoalEvents(game, live = false) {
   const goals = getGameGoals(game);
   if (!goals.length) return '';
   const cls = live ? 'goal-events live-goals' : 'goal-events';
-  const fp = goalsFingerprint(goals);
+  const fp = goalsFingerprint(goals, game.id);
   return `
     <div class="${cls}" data-goals="${game.id}" data-goals-fp="${fp}" data-goals-count="${goals.length}">
       <div class="goal-events-head">
         <span>Goal Events</span>
         <span class="goal-count">${goals.length}</span>
       </div>
-      ${goals.map((g) => renderGoalEventRow(g)).join('')}
+      ${goals.map((g) => renderGoalEventRow(g, game.id)).join('')}
     </div>`;
 }
 
@@ -1781,13 +1832,15 @@ async function loadData() {
   const btn = $('#refresh-btn');
   btn?.classList.add('spinning');
   try {
-    const [teamsData, groupsData, gamesData, youtubeLive] = await Promise.all([
-      fetchJSON('teams'), fetchJSON('groups'), fetchJSON('games'), fetchYoutubeLiveCache(),
+    const [teamsData, groupsData, gamesData, youtubeLive, goalClips] = await Promise.all([
+      fetchJSON('teams'), fetchJSON('groups'), fetchJSON('games'),
+      fetchYoutubeLiveCache(), fetchGoalClipsCache(),
     ]);
     state.teamsMap = Object.fromEntries(teamsData.teams.map((t) => [t.id, t]));
     state.groups = groupsData.groups;
     state.games = gamesData.games;
     state.youtubeLive = youtubeLive;
+    state.goalClips = goalClips;
     state.lastFetch = Date.now();
     state.thirdPlaceRankings = computeThirdPlaceRankings(state.groups);
     state.teamStatusMap = buildTeamStatusMap(state.groups, state.thirdPlaceRankings);
@@ -1830,8 +1883,30 @@ function initNav() {
   sections.forEach((s) => observer.observe(s));
 }
 
+function initGoalClipControls() {
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.ge-clip-btn');
+    if (!btn || btn.disabled) return;
+    const videoId = btn.dataset.yt;
+    if (!videoId) return;
+    const wrap = btn.closest('.ge-clip');
+    if (!wrap || wrap.querySelector('.ge-clip-player')) return;
+    wrap.insertAdjacentHTML('beforeend', `
+      <div class="ge-clip-player">
+        <iframe
+          src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0"
+          title="Goal highlight"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>`);
+    btn.hidden = true;
+  });
+}
+
 // ── Init ─────────────────────────────────────────────────────────
 
+initGoalClipControls();
 $('#refresh-btn')?.addEventListener('click', loadData);
 renderGroupTabs();
 initNav();

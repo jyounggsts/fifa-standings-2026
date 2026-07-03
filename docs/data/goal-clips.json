@@ -1,0 +1,33 @@
+{
+  "fetchedAt": "2026-07-03T19:04:23.728Z",
+  "games": {
+    "83": {
+      "goals": {
+        "home|68|Cristiano Ronaldo": {
+          "videoId": "2m-Z52ObEow",
+          "title": "Cristiano Ronaldo Scores First FIFA World Cup™ Knockout Round Goal to Put Portugal Level vs Croatia",
+          "thumb": "https://i.ytimg.com/vi/2m-Z52ObEow/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-03T19:04:24.674Z"
+        }
+      }
+    },
+    "84": {
+      "goals": {}
+    },
+    "85": {
+      "goals": {}
+    },
+    "88": {
+      "goals": {
+        "away|13|Emam Ashour": {
+          "videoId": "T9t2F41kqG8",
+          "title": "What a goal for Egypt to take the lead in the Round of 32 🇪🇬 Emam Ashour nets the header!",
+          "thumb": "https://i.ytimg.com/vi/T9t2F41kqG8/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-03T19:04:26.080Z"
+        }
+      }
+    }
+  }
+}

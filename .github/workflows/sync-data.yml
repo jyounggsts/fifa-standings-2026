@@ -38,6 +38,7 @@ jobs:
             cp "data/${endpoint}.json" "docs/data/${endpoint}.json"
           done
           node scripts/sync-youtube-live.mjs
+          node scripts/sync-goal-clips.mjs
 
       - name: Sync site assets into docs/
         run: |

@@ -631,9 +631,9 @@ a:hover { text-decoration: underline; }
 
 .goal-event {
   display: grid;
-  grid-template-columns: 2rem 1fr auto;
+  grid-template-columns: 2rem 1fr auto auto;
   gap: 0.45rem;
-  align-items: start;
+  align-items: center;
   padding: 0.35rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -692,6 +692,86 @@ a:hover { text-decoration: underline; }
 .ge-badge.penalty { color: var(--orange); border-color: rgba(255, 140, 0, 0.35); }
 .ge-badge.header { color: #7eb8ff; border-color: rgba(126, 184, 255, 0.3); }
 .ge-badge.own_goal { color: var(--dim); }
+
+.ge-clip {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.ge-clip-btn {
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+}
+
+.ge-clip-btn:hover { border-color: var(--red); }
+
+.ge-clip-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ge-clip-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.ge-clip-player {
+  width: 100%;
+  margin-top: 0.35rem;
+  aspect-ratio: 16 / 9;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--border2);
+  background: #000;
+}
+
+.ge-clip-player iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.goal-event:has(.ge-clip-player) {
+  flex-wrap: wrap;
+}
+
+.goal-event:has(.ge-clip-player) .ge-clip {
+  width: 100%;
+  order: 4;
+}
+
+.ge-clip-link {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  color: #9ecfff;
+  text-decoration: none;
+}
+
+.ge-clip-link:hover {
+  border-color: rgba(126, 184, 255, 0.5);
+  text-decoration: none;
+}
 
 .goal-event.home .ge-scorer { color: #ffb4b4; }
 .goal-event.away .ge-scorer { color: #ffd49a; }
