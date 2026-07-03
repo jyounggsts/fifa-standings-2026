@@ -1,4 +1,5 @@
 const API_BASE = 'https://worldcup26.ir/get';
+const DATA_BASE = 'data';
 const ESPN_API = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 const FIELD_LENGTH_M = 105;
 const FIELD_WIDTH_M = 68;
@@ -41,11 +42,30 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 // ── API ──────────────────────────────────────────────────────────
+// worldcup26.ir sets Cross-Origin-Resource-Policy: same-origin, so browsers
+// block direct fetches from GitHub Pages. Same-origin JSON in data/ is synced
+// by GitHub Actions; live API is kept as a dev fallback.
 
 async function fetchJSON(endpoint) {
-  const res = await fetch(`${API_BASE}/${endpoint}`);
-  if (!res.ok) throw new Error(`Failed to fetch ${endpoint}: ${res.status}`);
-  return res.json();
+  const errors = [];
+
+  try {
+    const cached = await fetch(`${DATA_BASE}/${endpoint}.json`, { cache: 'no-store' });
+    if (cached.ok) return cached.json();
+    errors.push(`cache HTTP ${cached.status}`);
+  } catch (err) {
+    errors.push(`cache ${err.message}`);
+  }
+
+  try {
+    const live = await fetch(`${API_BASE}/${endpoint}`);
+    if (live.ok) return live.json();
+    errors.push(`api HTTP ${live.status}`);
+  } catch (err) {
+    errors.push(`api ${err.message}`);
+  }
+
+  throw new Error(`Failed to fetch ${endpoint} (${errors.join('; ')})`);
 }
 
 // ── Date / time ──────────────────────────────────────────────────
@@ -1181,9 +1201,29 @@ function updateLiveFlags() {
   state.hasSoon = state.games.some(isGameSoon);
 }
 
+function setSyncStatus(text, tone = '') {
+  const sync = $('#sync-status');
+  if (!sync) return;
+  sync.textContent = text;
+  sync.className = tone ? `sync-tag ${tone}` : 'sync-tag';
+}
+
+function showLoadError(err) {
+  const message = err?.message || 'Could not load match data';
+  const html = `<p class="empty-msg error-msg">${escapeHtml(message)} <button type="button" class="retry-btn" onclick="loadData()">Retry</button></p>`;
+
+  setSyncStatus('Sync failed', 'error');
+  $('#today-loading')?.remove();
+  if ($('#today-timeline') && !state.games.length) $('#today-timeline').innerHTML = html;
+  if ($('#bracket-board') && !state.games.length) $('#bracket-board').innerHTML = html;
+  $('#standings-loading')?.remove();
+  if ($('#standings-layout') && !state.groups.length) $('#standings-layout').innerHTML = html;
+}
+
 async function loadData() {
   const btn = $('#refresh-btn');
   btn?.classList.add('spinning');
+  setSyncStatus('Syncing');
   try {
     const [teamsData, groupsData, gamesData] = await Promise.all([
       fetchJSON('teams'), fetchJSON('groups'), fetchJSON('games'),
@@ -1197,6 +1237,7 @@ async function loadData() {
     updateLiveFlags();
     await enrichGamesWithEspn();
 
+    setSyncStatus('Synced', 'fresh');
     renderHeaderStats();
     renderLiveBanner();
     renderToday();
@@ -1207,10 +1248,7 @@ async function loadData() {
     schedulePoll();
   } catch (err) {
     console.error(err);
-    const layout = $('#standings-layout');
-    if (layout && !state.groups.length) {
-      layout.innerHTML = '<p class="empty-msg">Could not load data. <button onclick="loadData()">Retry</button></p>';
-    }
+    showLoadError(err);
   } finally {
     btn?.classList.remove('spinning');
   }

@@ -156,6 +156,7 @@ a:hover { text-decoration: underline; }
 
 .sync-tag { font-size: 0.68rem; color: var(--dim); }
 .sync-tag.fresh { color: var(--green); }
+.sync-tag.error { color: var(--red); }
 
 .icon-btn {
   background: var(--card);
@@ -800,6 +801,19 @@ a:hover { text-decoration: underline; }
   border-radius: 2px;
   flex-shrink: 0;
 }
+
+.error-msg { color: #ffb4b4; }
+.retry-btn {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  background: var(--card2);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.retry-btn:hover { background: var(--hover); }
 
 .empty-msg {
   padding: 2rem 1rem;

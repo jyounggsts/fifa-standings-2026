@@ -1,0 +1,65 @@
+name: Sync match data and deploy Pages
+
+on:
+  schedule:
+    - cron: '*/3 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app.js'
+      - 'index.html'
+      - 'styles.css'
+      - 'data/**'
+      - '.github/workflows/sync-data.yml'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest match data
+        run: |
+          mkdir -p data docs/data
+          for endpoint in teams groups games; do
+            curl -fsSL "https://worldcup26.ir/get/${endpoint}" -o "data/${endpoint}.json"
+            cp "data/${endpoint}.json" "docs/data/${endpoint}.json"
+          done
+
+      - name: Sync site assets into docs/
+        run: |
+          cp app.js index.html styles.css docs/
+          cp .nojekyll docs/
+
+      - name: Commit and push updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Sync match data and site assets [automated]"
+            git push
+          fi
+
+      - name: Trigger GitHub Pages rebuild
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds"
