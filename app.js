@@ -1001,7 +1001,7 @@ function renderGoalClip(gameId, goal) {
     return `
       <div class="ge-clip">
         <button type="button" class="ge-clip-btn" data-yt="${clip.videoId}"
-                title="${escapeHtml(clip.title || 'Watch goal clip')}" aria-label="Play goal clip">
+                title="${escapeHtml(clip.title || 'Watch goal clip')}" aria-label="Pop out goal clip">
           <img class="ge-clip-thumb" src="${thumb}" alt="" loading="lazy">
           <span class="ge-clip-play">▶</span>
         </button>
@@ -1886,62 +1886,152 @@ function initNav() {
   sections.forEach((s) => observer.observe(s));
 }
 
-function closeGoalClipOverlay(card) {
-  const overlay = card?.querySelector('.ge-clip-overlay');
-  if (!overlay) return;
-  const iframe = overlay.querySelector('iframe');
-  if (iframe) iframe.removeAttribute('src');
-  overlay.hidden = true;
-  card.classList.remove('has-clip-open');
+const GOAL_PIP_IFRAME_ALLOW = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+
+function goalPipEmbedUrl(videoId) {
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1`;
 }
 
-function ensureGoalClipOverlay(card) {
-  let overlay = card.querySelector('.ge-clip-overlay');
-  if (overlay) return overlay;
+function closeGoalPipPopout() {
+  const pip = $('#goal-pip');
+  const iframe = pip?.querySelector('iframe');
+  if (iframe) iframe.removeAttribute('src');
+  if (pip) pip.hidden = true;
+}
 
-  card.insertAdjacentHTML('beforeend', `
-    <div class="ge-clip-overlay" hidden>
-      <div class="ge-clip-modal" role="dialog" aria-modal="true" aria-label="Goal highlight">
-        <div class="ge-clip-modal-head">
-          <span class="ge-clip-modal-title">Goal highlight</span>
-          <button type="button" class="ge-clip-close" aria-label="Close highlight">✕</button>
-        </div>
-        <div class="ge-clip-modal-body">
-          <iframe
-            title="Goal highlight"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-            referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        </div>
+function ensureGoalPipPopout() {
+  let pip = $('#goal-pip');
+  if (pip) return pip;
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="goal-pip" class="goal-pip" hidden role="dialog" aria-label="Goal highlight player">
+      <div class="goal-pip-head" data-pip-drag>
+        <span class="goal-pip-grip" aria-hidden="true">⠿</span>
+        <span class="goal-pip-title">Goal highlight</span>
+        <button type="button" class="goal-pip-close" aria-label="Close player">✕</button>
+      </div>
+      <div class="goal-pip-body">
+        <iframe
+          title="Goal highlight"
+          allow="${GOAL_PIP_IFRAME_ALLOW}"
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
     </div>`);
-  return card.querySelector('.ge-clip-overlay');
+  pip = $('#goal-pip');
+  initGoalPipDrag(pip);
+  return pip;
 }
 
-function openGoalClipOverlay(card, videoId, title) {
-  document.querySelectorAll('.se-card.has-clip-open').forEach((c) => {
-    if (c !== card) closeGoalClipOverlay(c);
+function initGoalPipDrag(pip) {
+  const handle = pip.querySelector('[data-pip-drag]');
+  if (!handle) return;
+
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+  let originX = 0;
+  let originY = 0;
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const x = Math.max(8, Math.min(window.innerWidth - pip.offsetWidth - 8, originX + e.clientX - offsetX));
+    const y = Math.max(8, Math.min(window.innerHeight - pip.offsetHeight - 8, originY + e.clientY - offsetY));
+    pip.style.left = `${x}px`;
+    pip.style.top = `${y}px`;
+  };
+
+  const onUp = () => {
+    dragging = false;
+    handle.classList.remove('is-dragging');
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || e.target.closest('.goal-pip-close')) return;
+    dragging = true;
+    handle.classList.add('is-dragging');
+    const rect = pip.getBoundingClientRect();
+    originX = rect.left;
+    originY = rect.top;
+    offsetX = e.clientX;
+    offsetY = e.clientY;
+    pip.style.right = 'auto';
+    pip.style.bottom = 'auto';
+    pip.style.left = `${originX}px`;
+    pip.style.top = `${originY}px`;
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   });
-  const overlay = ensureGoalClipOverlay(card);
-  const iframe = overlay.querySelector('iframe');
-  const titleEl = overlay.querySelector('.ge-clip-modal-title');
+}
+
+async function openDocumentGoalPip(videoId, title) {
+  if (!window.documentPictureInPicture) return false;
+  try {
+    const pipWindow = await documentPictureInPicture.requestWindow({
+      width: 420,
+      height: 260,
+    });
+    const safeTitle = escapeHtml(title || 'Goal highlight');
+    pipWindow.document.head.innerHTML = `
+      <style>
+        * { box-sizing: border-box; margin: 0; }
+        body {
+          background: #121212;
+          color: #f2f2f2;
+          font: 600 12px/1.3 system-ui, sans-serif;
+          overflow: hidden;
+        }
+        .head {
+          padding: 8px 10px;
+          border-bottom: 1px solid #2a2a2a;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        iframe {
+          display: block;
+          width: 100vw;
+          height: calc(100vh - 33px);
+          border: 0;
+          background: #000;
+        }
+      </style>`;
+    pipWindow.document.body.innerHTML = `
+      <div class="head">${safeTitle}</div>
+      <iframe
+        src="${goalPipEmbedUrl(videoId)}"
+        title="Goal highlight"
+        allow="${GOAL_PIP_IFRAME_ALLOW}"
+        allowfullscreen
+        referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+    pipWindow.addEventListener('pagehide', closeGoalPipPopout, { once: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function openGoalPipPopout(videoId, title) {
+  const pip = ensureGoalPipPopout();
+  const iframe = pip.querySelector('iframe');
+  const titleEl = pip.querySelector('.goal-pip-title');
   if (titleEl) titleEl.textContent = title || 'Goal highlight';
-  if (iframe) iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-  overlay.hidden = false;
-  card.classList.add('has-clip-open');
+  if (iframe) iframe.src = goalPipEmbedUrl(videoId);
+  pip.hidden = false;
+}
+
+async function openGoalClipPlayer(videoId, title) {
+  closeGoalPipPopout();
+  const usedBrowserPip = await openDocumentGoalPip(videoId, title);
+  if (!usedBrowserPip) openGoalPipPopout(videoId, title);
 }
 
 function initGoalClipControls() {
   document.addEventListener('click', (e) => {
-    const closeBtn = e.target.closest('.ge-clip-close');
-    if (closeBtn) {
-      closeGoalClipOverlay(closeBtn.closest('.se-card'));
-      return;
-    }
-
-    const backdrop = e.target.closest('.ge-clip-overlay');
-    if (backdrop && e.target === backdrop) {
-      closeGoalClipOverlay(backdrop.closest('.se-card'));
+    if (e.target.closest('.goal-pip-close')) {
+      closeGoalPipPopout();
       return;
     }
 
@@ -1949,14 +2039,11 @@ function initGoalClipControls() {
     if (!btn || btn.disabled) return;
     const videoId = btn.dataset.yt;
     if (!videoId) return;
-    const card = btn.closest('.se-card');
-    if (!card) return;
-    openGoalClipOverlay(card, videoId, btn.title);
+    openGoalClipPlayer(videoId, btn.title);
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    document.querySelectorAll('.se-card.has-clip-open').forEach((card) => closeGoalClipOverlay(card));
+    if (e.key === 'Escape') closeGoalPipPopout();
   });
 }
 

@@ -741,87 +741,84 @@ a:hover { text-decoration: underline; }
   background: rgba(0, 0, 0, 0.45);
 }
 
-.ge-clip-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.55rem;
-  background: rgba(0, 0, 0, 0.88);
+/* Chrome-style floating goal highlight popout */
+.goal-pip {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  width: min(360px, calc(100vw - 2rem));
+  background: #141414;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
-.ge-clip-overlay[hidden] {
+.goal-pip[hidden] {
   display: none !important;
 }
 
-.ge-clip-modal {
-  width: 100%;
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: var(--card);
-  border: 1px solid var(--border2);
-  border-radius: 5px;
-  overflow: hidden;
-  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
-}
-
-.ge-clip-modal-head {
-  display: flex;
+.goal-pip-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
-  background: var(--card2);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  gap: 0.35rem;
+  padding: 0.35rem 0.45rem;
+  background: #1c1c1c;
+  border-bottom: 1px solid #2a2a2a;
+  cursor: grab;
+  user-select: none;
 }
 
-.ge-clip-modal-title {
+.goal-pip-head.is-dragging {
+  cursor: grabbing;
+}
+
+.goal-pip-grip {
+  font-size: 0.7rem;
+  color: #666;
+  line-height: 1;
+}
+
+.goal-pip-title {
   font-size: 0.62rem;
   font-weight: 700;
-  color: var(--text);
+  color: #eee;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.ge-clip-close {
+.goal-pip-close {
   flex-shrink: 0;
   background: transparent;
-  border: 1px solid var(--border2);
-  border-radius: 3px;
-  color: var(--muted);
+  border: none;
+  border-radius: 4px;
+  color: #888;
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   line-height: 1;
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.4rem;
+  height: 1.4rem;
   padding: 0;
 }
 
-.ge-clip-close:hover {
-  color: var(--text);
-  border-color: var(--red);
+.goal-pip-close:hover {
+  color: #fff;
+  background: rgba(255, 45, 45, 0.2);
 }
 
-.ge-clip-modal-body {
+.goal-pip-body {
   aspect-ratio: 16 / 9;
   background: #000;
-  min-height: 0;
 }
 
-.ge-clip-modal-body iframe {
+.goal-pip-body iframe {
   display: block;
   width: 100%;
   height: 100%;
   border: 0;
-}
-
-.se-card.has-clip-open {
-  z-index: 2;
 }
 
 .ge-clip-link {
