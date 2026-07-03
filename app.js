@@ -1932,10 +1932,58 @@ function ensureGoalPipPopout() {
           allowfullscreen
           referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
+      <div class="goal-pip-resize" data-pip-resize role="presentation" aria-hidden="true"></div>
     </div>`);
   pip = $('#goal-pip');
   initGoalPipDrag(pip);
+  initGoalPipResize(pip);
   return pip;
+}
+
+function anchorGoalPipPosition(pip) {
+  const rect = pip.getBoundingClientRect();
+  pip.style.right = 'auto';
+  pip.style.bottom = 'auto';
+  pip.style.left = `${rect.left}px`;
+  pip.style.top = `${rect.top}px`;
+}
+
+function initGoalPipResize(pip) {
+  const handle = pip.querySelector('[data-pip-resize]');
+  if (!handle) return;
+
+  const MIN_W = 240;
+  const MAX_W = () => Math.min(960, window.innerWidth - 16);
+
+  let resizing = false;
+  let startX = 0;
+  let startW = 0;
+
+  const onMove = (e) => {
+    if (!resizing) return;
+    const newW = Math.max(MIN_W, Math.min(MAX_W(), startW + (e.clientX - startX)));
+    pip.style.width = `${newW}px`;
+  };
+
+  const onUp = () => {
+    resizing = false;
+    handle.classList.remove('is-resizing');
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    anchorGoalPipPosition(pip);
+    resizing = true;
+    startX = e.clientX;
+    startW = pip.offsetWidth;
+    handle.classList.add('is-resizing');
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
 }
 
 function initGoalPipDrag(pip) {
@@ -1967,15 +2015,12 @@ function initGoalPipDrag(pip) {
     if (e.button !== 0 || e.target.closest('.goal-pip-close')) return;
     dragging = true;
     handle.classList.add('is-dragging');
+    anchorGoalPipPosition(pip);
     const rect = pip.getBoundingClientRect();
     originX = rect.left;
     originY = rect.top;
     offsetX = e.clientX;
     offsetY = e.clientY;
-    pip.style.right = 'auto';
-    pip.style.bottom = 'auto';
-    pip.style.left = `${originX}px`;
-    pip.style.top = `${originY}px`;
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   });
