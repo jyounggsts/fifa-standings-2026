@@ -598,6 +598,8 @@ a:hover { text-decoration: underline; }
 .goal-events {
   border-top: 1px solid var(--border);
   padding: 0.5rem 0.65rem 0.35rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .goal-event.goal-event-new {
@@ -631,11 +633,12 @@ a:hover { text-decoration: underline; }
 
 .goal-event {
   display: grid;
-  grid-template-columns: 2rem 1fr auto auto;
-  gap: 0.45rem;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: 0.35rem 0.5rem;
   align-items: center;
   padding: 0.35rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  min-width: 0;
 }
 
 .goal-event:last-child { border-bottom: none; }
@@ -677,6 +680,13 @@ a:hover { text-decoration: underline; }
   color: var(--dim);
 }
 
+.ge-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 .ge-badge {
   font-size: 0.52rem;
   font-weight: 800;
@@ -686,7 +696,7 @@ a:hover { text-decoration: underline; }
   background: var(--card2);
   border: 1px solid var(--border);
   color: var(--muted);
-  margin-top: 0.1rem;
+  flex-shrink: 0;
 }
 
 .ge-badge.penalty { color: var(--orange); border-color: rgba(255, 140, 0, 0.35); }
@@ -695,14 +705,13 @@ a:hover { text-decoration: underline; }
 
 .ge-clip {
   flex-shrink: 0;
-  align-self: center;
 }
 
 .ge-clip-btn {
   position: relative;
   display: block;
-  width: 72px;
-  height: 40px;
+  width: 64px;
+  height: 36px;
   padding: 0;
   border: 1px solid var(--border2);
   border-radius: 3px;
@@ -732,8 +741,10 @@ a:hover { text-decoration: underline; }
 }
 
 .ge-clip-player {
+  grid-column: 1 / -1;
   width: 100%;
-  margin-top: 0.35rem;
+  max-width: 100%;
+  margin-top: 0.15rem;
   aspect-ratio: 16 / 9;
   border-radius: 3px;
   overflow: hidden;
@@ -742,23 +753,18 @@ a:hover { text-decoration: underline; }
 }
 
 .ge-clip-player iframe {
+  display: block;
   width: 100%;
   height: 100%;
   border: 0;
 }
 
-.goal-event:has(.ge-clip-player) {
-  flex-wrap: wrap;
-}
-
-.goal-event:has(.ge-clip-player) .ge-clip {
-  width: 100%;
-  order: 4;
+.goal-event.is-expanded .ge-clip-btn {
+  display: none;
 }
 
 .ge-clip-link {
   flex-shrink: 0;
-  align-self: center;
   font-size: 0.55rem;
   font-weight: 700;
   padding: 0.2rem 0.4rem;

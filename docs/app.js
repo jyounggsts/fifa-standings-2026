@@ -1020,6 +1020,7 @@ function renderGoalClip(gameId, goal) {
 }
 
 function renderGoalEventRow(g, gameId) {
+  const clip = renderGoalClip(gameId, g);
   return `
     <div class="goal-event ${g.side}">
       <span class="ge-min">${g.minute}'</span>
@@ -1028,8 +1029,10 @@ function renderGoalEventRow(g, gameId) {
         <span class="ge-detail">${escapeHtml(g.shotDetail)}${g.distance ? ` · <strong>${g.distance}</strong>` : ''}</span>
         ${g.assist ? `<span class="ge-assist">Assist: ${escapeHtml(g.assist)}</span>` : ''}
       </div>
-      ${renderGoalClip(gameId, g)}
-      <span class="ge-badge ${g.type}">${goalBadgeLabel(g.type)}</span>
+      <div class="ge-meta">
+        ${clip}
+        <span class="ge-badge ${g.type}">${goalBadgeLabel(g.type)}</span>
+      </div>
     </div>`;
 }
 
@@ -1889,9 +1892,10 @@ function initGoalClipControls() {
     if (!btn || btn.disabled) return;
     const videoId = btn.dataset.yt;
     if (!videoId) return;
-    const wrap = btn.closest('.ge-clip');
-    if (!wrap || wrap.querySelector('.ge-clip-player')) return;
-    wrap.insertAdjacentHTML('beforeend', `
+    const row = btn.closest('.goal-event');
+    if (!row || row.querySelector('.ge-clip-player')) return;
+    row.classList.add('is-expanded');
+    row.insertAdjacentHTML('beforeend', `
       <div class="ge-clip-player">
         <iframe
           src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0"
@@ -1900,7 +1904,6 @@ function initGoalClipControls() {
           allowfullscreen
           referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>`);
-    btn.hidden = true;
   });
 }
 
