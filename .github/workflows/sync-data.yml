@@ -10,6 +10,7 @@ on:
       - 'app.js'
       - 'index.html'
       - 'styles.css'
+      - 'docs/**'
       - 'data/**'
       - '.github/workflows/sync-data.yml'
 
