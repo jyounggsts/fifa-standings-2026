@@ -34,6 +34,7 @@ const state = {
   espnKickoffs: {},
   gameOdds: {},
   gameBroadcasts: {},
+  youtubeLive: null,
   userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   lastFetch: null,
   pollTimer: null,
@@ -68,6 +69,16 @@ async function fetchJSON(endpoint) {
   }
 
   throw new Error(`Failed to fetch ${endpoint} (${errors.join('; ')})`);
+}
+
+async function fetchYoutubeLiveCache() {
+  try {
+    const res = await fetch(`${DATA_BASE}/youtube-live.json`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 // ── Date / time ──────────────────────────────────────────────────
@@ -616,6 +627,53 @@ const FREE_WATCH_OPTIONS = [
   { label: 'Tubi', url: 'https://tubitv.com/hubs/fifa-world-cup-fox-hub', note: 'Free FOX World Cup hub on Tubi' },
 ];
 
+const YT_TEAM_ALIASES = {
+  'united states': ['usa', 'u.s.', 'u.s.a.', 'america'],
+  'south korea': ['korea republic', 'republic of korea', 'korea'],
+  'ivory coast': ['cote d\'ivoire', 'côte d\'ivoire'],
+  'czech republic': ['czechia'],
+  'democratic republic of the congo': ['dr congo', 'congo dr', 'drc'],
+  'bosnia and herzegovina': ['bosnia'],
+};
+
+function normalizeTeamToken(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function youtubeTeamMatches(gameName, youtubeName) {
+  const game = normalizeTeamToken(gameName);
+  const yt = normalizeTeamToken(youtubeName);
+  if (!game || !yt) return false;
+  if (game === yt || game.includes(yt) || yt.includes(game)) return true;
+  const aliases = YT_TEAM_ALIASES[game] || [];
+  return aliases.some((alias) => yt.includes(alias) || alias.includes(yt));
+}
+
+function getYoutubeEmbedForGame(game) {
+  const live = state.youtubeLive?.foxSports;
+  if (!live?.videoId || !live.isLive) return null;
+  const teams = live.parsedTeams || [];
+  if (teams.length < 2) return null;
+
+  const home = game.home_team_name_en || teamName(game.home_team_id) || '';
+  const away = game.away_team_name_en || teamName(game.away_team_id) || '';
+  const direct = youtubeTeamMatches(home, teams[0]) && youtubeTeamMatches(away, teams[1]);
+  const flipped = youtubeTeamMatches(home, teams[1]) && youtubeTeamMatches(away, teams[0]);
+  if (!direct && !flipped) return null;
+
+  return {
+    videoId: live.videoId,
+    title: live.title,
+    source: 'FOX Sports',
+  };
+}
+
 function parseEspnBroadcasts(espnEvent) {
   const geo = espnEvent?.competitions?.[0]?.geoBroadcasts || [];
   return [...new Set(geo.map((g) => g.media?.shortName).filter(Boolean))];
@@ -647,14 +705,30 @@ function getWatchOptions(game) {
   return { paid, free: FREE_WATCH_OPTIONS };
 }
 
-function watchOptionsFingerprint(opts) {
-  return JSON.stringify(opts);
+function watchPanelFingerprint(game, phase) {
+  const embed = getYoutubeEmbedForGame(game);
+  return JSON.stringify({ phase, embed, options: getWatchOptions(game) });
+}
+
+function renderWatchPlayer(embed) {
+  if (!embed) return '';
+  return `
+    <div class="watch-player">
+      <iframe
+        src="https://www.youtube.com/embed/${embed.videoId}?autoplay=0&rel=0"
+        title="${escapeHtml(embed.title)}"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>`;
 }
 
 function renderWatchBar(game, phase) {
   if (phase !== 'live' && phase !== 'upcoming') return '';
   const opts = getWatchOptions(game);
-  if (!opts.paid.length && !opts.free.length) return '';
+  const embed = phase === 'live' ? getYoutubeEmbedForGame(game) : null;
+  if (!embed && !opts.paid.length && !opts.free.length) return '';
 
   const paidBtns = opts.paid.map((o) => `
     <a class="watch-btn ${o.tracker ? 'tracker' : ''} ${o.primary ? 'primary' : ''}"
@@ -668,15 +742,19 @@ function renderWatchBar(game, phase) {
       ${escapeHtml(o.label)} <span class="free-tag">FREE</span>
     </a>`).join('');
 
-  const fp = watchOptionsFingerprint(opts);
-  const liveLabel = phase === 'live' ? 'Watch Live Now' : 'Where to Watch';
+  const fp = watchPanelFingerprint(game, phase);
+  const liveLabel = phase === 'live' ? 'Watch Live' : 'Where to Watch';
+  const note = embed
+    ? `Official ${escapeHtml(embed.source)} stream on YouTube`
+    : 'Full broadcasts open on broadcaster sites';
 
   return `
     <div class="watch-bar" data-watch="${game.id}" data-watch-fp="${fp}">
       <div class="watch-bar-head">
         <span class="watch-title">▶ ${liveLabel}</span>
-        <span class="watch-note">Official streams — opens broadcaster site</span>
+        <span class="watch-note">${note}</span>
       </div>
+      ${renderWatchPlayer(embed)}
       <div class="watch-btns">${paidBtns}${freeBtns}</div>
     </div>`;
 }
@@ -694,7 +772,7 @@ function syncWatchBar(card, game, phase) {
     return;
   }
 
-  const fp = watchOptionsFingerprint(getWatchOptions(game));
+  const fp = watchPanelFingerprint(game, phase);
   if (el?.dataset.watchFp === fp) return;
 
   if (!el) {
@@ -1703,12 +1781,13 @@ async function loadData() {
   const btn = $('#refresh-btn');
   btn?.classList.add('spinning');
   try {
-    const [teamsData, groupsData, gamesData] = await Promise.all([
-      fetchJSON('teams'), fetchJSON('groups'), fetchJSON('games'),
+    const [teamsData, groupsData, gamesData, youtubeLive] = await Promise.all([
+      fetchJSON('teams'), fetchJSON('groups'), fetchJSON('games'), fetchYoutubeLiveCache(),
     ]);
     state.teamsMap = Object.fromEntries(teamsData.teams.map((t) => [t.id, t]));
     state.groups = groupsData.groups;
     state.games = gamesData.games;
+    state.youtubeLive = youtubeLive;
     state.lastFetch = Date.now();
     state.thirdPlaceRankings = computeThirdPlaceRankings(state.groups);
     state.teamStatusMap = buildTeamStatusMap(state.groups, state.thirdPlaceRankings);

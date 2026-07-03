@@ -37,6 +37,7 @@ jobs:
             curl -fsSL "https://worldcup26.ir/get/${endpoint}" -o "data/${endpoint}.json"
             cp "data/${endpoint}.json" "docs/data/${endpoint}.json"
           done
+          node scripts/sync-youtube-live.mjs
 
       - name: Sync site assets into docs/
         run: |
