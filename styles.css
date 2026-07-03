@@ -437,6 +437,89 @@ a:hover { text-decoration: underline; }
   text-shadow: 0 0 12px var(--red-glow);
 }
 
+/* ── Watch live (official broadcaster links) ── */
+.watch-bar {
+  padding: 0.45rem 0.65rem 0.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--border);
+}
+
+.se-card.live .watch-bar {
+  background: rgba(255, 45, 45, 0.06);
+  border-bottom-color: rgba(255, 45, 45, 0.2);
+}
+
+.watch-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.watch-title {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.se-card.live .watch-title { color: var(--red); }
+
+.watch-note {
+  font-size: 0.5rem;
+  color: var(--dim);
+  text-align: right;
+}
+
+.watch-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.watch-btn {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px;
+  border: 1px solid var(--border2);
+  background: var(--card2);
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.watch-btn:hover {
+  background: var(--hover);
+  border-color: var(--muted);
+  text-decoration: none;
+}
+
+.watch-btn.primary {
+  border-color: rgba(255, 45, 45, 0.45);
+  color: #ffb4b4;
+}
+
+.watch-btn.tracker {
+  border-color: rgba(126, 184, 255, 0.35);
+  color: #9ecfff;
+}
+
+.watch-btn.free {
+  border-color: rgba(0, 200, 83, 0.35);
+  color: #4ee6a0;
+}
+
+.free-tag {
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  margin-left: 0.15rem;
+  opacity: 0.85;
+}
+
 .se-tracker {
   padding: 0.5rem 0.65rem 0;
 }

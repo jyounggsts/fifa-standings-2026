@@ -33,6 +33,7 @@ const state = {
   espnEventIds: {},
   espnKickoffs: {},
   gameOdds: {},
+  gameBroadcasts: {},
   userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   lastFetch: null,
   pollTimer: null,
@@ -602,6 +603,107 @@ function renderBracketMl(game, side, phase) {
   return `<span class="b-ml ${tone}${liveCls}" title="${escapeHtml(oddsLaymanTitle(val))}">${val}</span>`;
 }
 
+const WATCH_HUBS = {
+  FOX: { label: 'FOX Sports', url: 'https://www.foxsports.com/soccer/fifa-world-cup' },
+  FS1: { label: 'FS1', url: 'https://www.foxsports.com/soccer/fifa-world-cup' },
+  'FOX One': { label: 'FOX One', url: 'https://www.fox.com/soccer/fifa-world-cup' },
+  Tele: { label: 'Telemundo', url: 'https://www.telemundo.com/shows/futbol/world-cup' },
+  Universo: { label: 'Universo', url: 'https://www.telemundo.com/shows/futbol/world-cup' },
+};
+
+const FREE_WATCH_OPTIONS = [
+  { label: 'FIFA+', url: 'https://www.plus.fifa.com/en/', note: 'Select matches stream free on FIFA+' },
+  { label: 'Tubi', url: 'https://tubitv.com/hubs/fifa-world-cup-fox-hub', note: 'Free FOX World Cup hub on Tubi' },
+];
+
+function parseEspnBroadcasts(espnEvent) {
+  const geo = espnEvent?.competitions?.[0]?.geoBroadcasts || [];
+  return [...new Set(geo.map((g) => g.media?.shortName).filter(Boolean))];
+}
+
+function getWatchOptions(game) {
+  const broadcasts = state.gameBroadcasts[game.id] || [];
+  const espnId = state.espnEventIds[game.id];
+  const paid = [];
+
+  broadcasts.forEach((name) => {
+    const hub = WATCH_HUBS[name];
+    if (hub) {
+      paid.push({
+        ...hub,
+        primary: name === 'FOX' || name === 'FOX One',
+      });
+    }
+  });
+
+  if (espnId) {
+    paid.push({
+      label: 'ESPN Gamecast',
+      url: `https://www.espn.com/soccer/match/_/gameId/${espnId}`,
+      tracker: true,
+    });
+  }
+
+  return { paid, free: FREE_WATCH_OPTIONS };
+}
+
+function watchOptionsFingerprint(opts) {
+  return JSON.stringify(opts);
+}
+
+function renderWatchBar(game, phase) {
+  if (phase !== 'live' && phase !== 'upcoming') return '';
+  const opts = getWatchOptions(game);
+  if (!opts.paid.length && !opts.free.length) return '';
+
+  const paidBtns = opts.paid.map((o) => `
+    <a class="watch-btn ${o.tracker ? 'tracker' : ''} ${o.primary ? 'primary' : ''}"
+       href="${o.url}" target="_blank" rel="noopener noreferrer">
+      ${o.tracker ? 'Live tracker · ' : ''}${escapeHtml(o.label)}
+    </a>`).join('');
+
+  const freeBtns = opts.free.map((o) => `
+    <a class="watch-btn free" href="${o.url}" target="_blank" rel="noopener noreferrer"
+       title="${escapeHtml(o.note)}">
+      ${escapeHtml(o.label)} <span class="free-tag">FREE</span>
+    </a>`).join('');
+
+  const fp = watchOptionsFingerprint(opts);
+  const liveLabel = phase === 'live' ? 'Watch Live Now' : 'Where to Watch';
+
+  return `
+    <div class="watch-bar" data-watch="${game.id}" data-watch-fp="${fp}">
+      <div class="watch-bar-head">
+        <span class="watch-title">▶ ${liveLabel}</span>
+        <span class="watch-note">Official streams — opens broadcaster site</span>
+      </div>
+      <div class="watch-btns">${paidBtns}${freeBtns}</div>
+    </div>`;
+}
+
+function syncWatchBar(card, game, phase) {
+  const el = card.querySelector(`[data-watch="${game.id}"]`);
+  if (phase !== 'live' && phase !== 'upcoming') {
+    el?.remove();
+    return;
+  }
+
+  const html = renderWatchBar(game, phase);
+  if (!html) {
+    el?.remove();
+    return;
+  }
+
+  const fp = watchOptionsFingerprint(getWatchOptions(game));
+  if (el?.dataset.watchFp === fp) return;
+
+  if (!el) {
+    card.querySelector('.se-card-top')?.insertAdjacentHTML('afterend', html);
+    return;
+  }
+  el.outerHTML = html;
+}
+
 function renderBracketDrawMl(game, phase) {
   if (phase === 'finished') return '';
   const odds = getGameOdds(game.id);
@@ -707,6 +809,11 @@ async function enrichGamesWithEspn() {
     const parsedOdds = parseEspnOdds(espnEvent.competitions?.[0]?.odds);
     if (parsedOdds) {
       state.gameOdds[game.id] = parsedOdds;
+    }
+
+    const broadcasts = parseEspnBroadcasts(espnEvent);
+    if (broadcasts.length) {
+      state.gameBroadcasts[game.id] = broadcasts;
     }
 
     if (!isGameLive(game) && !isKickoffToday(game)) return;
@@ -1124,6 +1231,7 @@ function renderStreamCard(game) {
         ${statusBadge}
         <span class="se-kick">${formatKickoffDisplay(game)}</span>
       </div>
+      ${renderWatchBar(game, phase)}
       ${trackerHtml}
       <div class="se-body">
         <div class="se-side ${phase === 'live' ? 'live-side' : ''}">
@@ -1225,6 +1333,7 @@ function patchStreamCard(card, game) {
     }
   }
 
+  syncWatchBar(card, game, phase);
   syncGoalEvents(card, game, phase === 'live');
   syncScoreOdds(card, game, phase);
 }
