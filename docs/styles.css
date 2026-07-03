@@ -370,12 +370,25 @@ a:hover { text-decoration: underline; }
   max-width: 110px;
 }
 
+.se-score-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  min-height: 2.6rem;
+  justify-content: center;
+}
+
 .se-score {
   font-size: 1.5rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--text);
-  min-height: 1.5rem;
+  line-height: 1;
+}
+
+.se-card.upcoming .se-score:empty {
+  display: none;
 }
 
 .se-mid {
@@ -587,107 +600,67 @@ a:hover { text-decoration: underline; }
   background: rgba(255, 45, 45, 0.04);
 }
 
-/* ── Betting odds ── */
-.match-odds {
-  border-top: 1px solid var(--border);
-  padding: 0.5rem 0.65rem 0.4rem;
-  background: rgba(255, 255, 255, 0.02);
+/* ── UFC-style moneyline odds (under score) ── */
+.se-ml {
+  font-size: 1.05rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  cursor: help;
 }
 
-.match-odds.live-odds {
-  background: rgba(0, 200, 83, 0.04);
-  border-top-color: rgba(0, 200, 83, 0.2);
+.se-card.live .se-ml {
+  font-size: 0.78rem;
 }
 
-.odds-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.4rem;
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+.se-ml.fav { color: #4ee6a0; }
+.se-ml.dog { color: #ffb84d; }
+
+.se-card.live .se-ml.live-line {
+  animation: odds-glow 2.5s ease-in-out infinite;
 }
 
-.odds-provider {
-  font-size: 0.58rem;
-  font-weight: 600;
-  color: var(--dim);
-  text-transform: none;
-  letter-spacing: 0;
+@keyframes odds-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-.odds-grid {
+.se-draw-odds {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-}
-
-.odds-row {
-  display: grid;
-  grid-template-columns: 4.5rem 1fr;
-  gap: 0.4rem;
   align-items: center;
+  gap: 0.08rem;
+  margin-top: 0.15rem;
 }
 
-.odds-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.odds-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
-.odds-chip {
-  font-size: 0.68rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  padding: 0.15rem 0.4rem;
-  border-radius: 3px;
-  background: var(--card2);
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.odds-chip em {
-  font-style: normal;
-  font-size: 0.58rem;
+.se-draw-lbl {
+  font-size: 0.48rem;
   font-weight: 800;
-  color: var(--muted);
-  margin-right: 0.2rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
 }
 
-.odds-chip.home em { color: #ffb4b4; }
-.odds-chip.away em { color: #ffd49a; }
-.odds-chip.draw em { color: #9ecfff; }
-.odds-chip.over em, .odds-chip.under em { color: var(--orange); }
-.odds-chip.empty { opacity: 0.45; }
+.se-draw-odds .se-ml {
+  font-size: 0.72rem;
+}
 
-.odds-summary {
-  margin-top: 0.35rem;
-  font-size: 0.6rem;
-  color: var(--dim);
-  font-style: italic;
+.se-card.upcoming .se-draw-odds .se-ml {
+  font-size: 0.85rem;
 }
 
 .b-odds {
   padding: 0.25rem 0.5rem 0.35rem;
   font-size: 0.58rem;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--green);
+  color: var(--muted);
   text-align: center;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
   letter-spacing: 0.02em;
 }
+
+.b-odds .fav, .b-odds { color: inherit; }
 
 /* ── Bracket ── */
 .bracket-wrap {

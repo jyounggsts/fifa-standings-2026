@@ -466,91 +466,136 @@ function oddsFingerprint(odds) {
   return odds ? JSON.stringify(odds) : '';
 }
 
-function renderOddsChip(label, value, cls = '') {
-  if (!value) return `<span class="odds-chip empty ${cls}"><em>${label}</em> —</span>`;
-  return `<span class="odds-chip ${cls}"><em>${label}</em> ${value}</span>`;
+function getOddsTone(val) {
+  if (!val) return '';
+  const s = String(val);
+  if (s.startsWith('-')) return 'fav';
+  if (s.startsWith('+')) return 'dog';
+  return '';
 }
 
-function renderMatchOdds(game, live = false) {
+function oddsLaymanTitle(val) {
+  const n = Number(String(val).replace('+', ''));
+  if (Number.isNaN(n)) return 'Betting odds';
+  if (n < 0) return `Favorite — bet $${Math.abs(n)} to win $100`;
+  return `Underdog — bet $100 to win $${n}`;
+}
+
+function renderMlOdds(game, side, phase) {
+  if (phase !== 'live' && phase !== 'upcoming') return '';
   const odds = getGameOdds(game.id);
   if (!odds) return '';
-  const fp = oddsFingerprint(odds);
-  const totalLine = odds.total.line ?? '—';
-  const spreadHome = odds.spread.homeLine && odds.spread.homeOdds
-    ? `${odds.spread.homeLine} (${odds.spread.homeOdds})` : null;
-  const spreadAway = odds.spread.awayLine && odds.spread.awayOdds
-    ? `${odds.spread.awayLine} (${odds.spread.awayOdds})` : null;
+  const val = side === 'home' ? odds.moneyline.home : odds.moneyline.away;
+  if (!val) return '';
+  const tone = getOddsTone(val);
+  const liveCls = phase === 'live' ? ' live-line' : '';
+  const attr = side === 'home' ? 'home-ml' : 'away-ml';
+  return `<span class="se-ml ${side} ${tone}${liveCls}" data-${attr}="${game.id}" title="${escapeHtml(oddsLaymanTitle(val))}">${val}</span>`;
+}
 
+function renderDrawOdds(game, phase) {
+  if (phase !== 'live' && phase !== 'upcoming') return '';
+  const odds = getGameOdds(game.id);
+  if (!odds?.moneyline.draw) return '';
+  const val = odds.moneyline.draw;
+  const tone = getOddsTone(val);
+  const liveCls = phase === 'live' ? ' live-line' : '';
   return `
-    <div class="match-odds ${live ? 'live-odds' : ''}" data-odds="${game.id}" data-odds-fp="${fp}">
-      <div class="odds-head">
-        <span>${live ? 'Live Odds' : 'Odds'}</span>
-        <span class="odds-provider">${escapeHtml(odds.provider)}</span>
-      </div>
-      <div class="odds-grid">
-        <div class="odds-row">
-          <span class="odds-label">Moneyline</span>
-          <div class="odds-chips">
-            ${renderOddsChip('H', odds.moneyline.home, 'home')}
-            ${renderOddsChip('D', odds.moneyline.draw, 'draw')}
-            ${renderOddsChip('A', odds.moneyline.away, 'away')}
-          </div>
-        </div>
-        ${(spreadHome || spreadAway) ? `
-        <div class="odds-row">
-          <span class="odds-label">Spread</span>
-          <div class="odds-chips">
-            ${spreadHome ? `<span class="odds-chip home"><em>H</em> ${spreadHome}</span>` : ''}
-            ${spreadAway ? `<span class="odds-chip away"><em>A</em> ${spreadAway}</span>` : ''}
-          </div>
-        </div>` : ''}
-        ${(odds.total.over || odds.total.under) ? `
-        <div class="odds-row">
-          <span class="odds-label">Total ${totalLine}</span>
-          <div class="odds-chips">
-            ${renderOddsChip('O', odds.total.over, 'over')}
-            ${renderOddsChip('U', odds.total.under, 'under')}
-          </div>
-        </div>` : ''}
-      </div>
-      ${odds.summary ? `<div class="odds-summary">${escapeHtml(odds.summary)}</div>` : ''}
+    <div class="se-draw-odds" data-draw-wrap="${game.id}">
+      <span class="se-draw-lbl">DRAW</span>
+      <span class="se-ml draw ${tone}${liveCls}" data-draw-ml="${game.id}" title="${escapeHtml(oddsLaymanTitle(val))}">${val}</span>
     </div>`;
 }
 
-function syncMatchOdds(card, game, phase) {
-  const el = card.querySelector(`[data-odds="${game.id}"]`);
-  const show = phase === 'live' || phase === 'upcoming';
+function syncMlEl(card, game, side, val, phase) {
+  const mlAttr = side === 'home' ? 'home-ml' : 'away-ml';
+  const scoreAttr = side === 'home' ? 'home-score' : 'away-score';
+  let el = card.querySelector(`[data-${mlAttr}="${game.id}"]`);
 
-  if (!show) {
+  if (!val) {
     el?.remove();
     return;
   }
 
+  const tone = getOddsTone(val);
+  const liveCls = phase === 'live' ? ' live-line' : '';
+  const title = oddsLaymanTitle(val);
+
+  if (!el) {
+    const anchor = card.querySelector(`[data-${scoreAttr}="${game.id}"]`);
+    anchor?.insertAdjacentHTML(
+      'afterend',
+      `<span class="se-ml ${side} ${tone}${liveCls}" data-${mlAttr}="${game.id}" title="${escapeHtml(title)}">${val}</span>`,
+    );
+    return;
+  }
+
+  if (el.textContent !== val) el.textContent = val;
+  el.className = `se-ml ${side} ${tone}${liveCls}`;
+  el.title = title;
+}
+
+function syncDrawEl(card, game, val, phase) {
+  let wrap = card.querySelector(`[data-draw-wrap="${game.id}"]`);
+
+  if (!val) {
+    wrap?.remove();
+    return;
+  }
+
+  const tone = getOddsTone(val);
+  const liveCls = phase === 'live' ? ' live-line' : '';
+  const title = oddsLaymanTitle(val);
+
+  if (!wrap) {
+    const mid = card.querySelector('.se-mid');
+    const vs = mid?.querySelector('.se-vs');
+    vs?.insertAdjacentHTML(
+      'afterend',
+      `<div class="se-draw-odds" data-draw-wrap="${game.id}">
+        <span class="se-draw-lbl">DRAW</span>
+        <span class="se-ml draw ${tone}${liveCls}" data-draw-ml="${game.id}" title="${escapeHtml(title)}">${val}</span>
+      </div>`,
+    );
+    return;
+  }
+
+  const el = wrap.querySelector(`[data-draw-ml="${game.id}"]`);
+  if (el) {
+    if (el.textContent !== val) el.textContent = val;
+    el.className = `se-ml draw ${tone}${liveCls}`;
+    el.title = title;
+  }
+}
+
+function syncScoreOdds(card, game, phase) {
+  card.querySelector('.match-odds')?.remove();
+
+  const show = phase === 'live' || phase === 'upcoming';
   const odds = getGameOdds(game.id);
-  if (!odds) {
-    el?.remove();
+
+  if (!show || !odds) {
+    card.querySelector(`[data-home-ml="${game.id}"]`)?.remove();
+    card.querySelector(`[data-away-ml="${game.id}"]`)?.remove();
+    card.querySelector(`[data-draw-wrap="${game.id}"]`)?.remove();
+    delete card.dataset.oddsFp;
     return;
   }
 
   const fp = oddsFingerprint(odds);
-  if (el?.dataset.oddsFp === fp) return;
+  if (card.dataset.oddsFp === fp) return;
+  card.dataset.oddsFp = fp;
 
-  const html = renderMatchOdds(game, phase === 'live');
-  if (!el) {
-    card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', html);
-    return;
-  }
-  el.outerHTML = html;
+  syncMlEl(card, game, 'home', odds.moneyline.home, phase);
+  syncMlEl(card, game, 'away', odds.moneyline.away, phase);
+  syncDrawEl(card, game, odds.moneyline.draw, phase);
 }
 
 function renderBracketOdds(game) {
   const phase = getMatchPhase(game);
   const odds = getGameOdds(game.id);
   if (!odds || phase === 'finished') return '';
-  const parts = [];
-  if (odds.moneyline.home) parts.push(`H ${odds.moneyline.home}`);
-  if (odds.moneyline.draw) parts.push(`D ${odds.moneyline.draw}`);
-  if (odds.moneyline.away) parts.push(`A ${odds.moneyline.away}`);
+  const parts = [odds.moneyline.home, odds.moneyline.draw, odds.moneyline.away].filter(Boolean);
   if (!parts.length) return '';
   return `<div class="b-odds" data-odds="${game.id}">${parts.join(' · ')}</div>`;
 }
@@ -1058,7 +1103,6 @@ function renderStreamCard(game) {
     ? `<span class="se-pens">(${score.pens.home}-${score.pens.away} pens)</span>` : '';
   const trackerHtml = phase === 'live' ? renderLiveTracker(game) : '';
   const goalsHtml = renderGoalEvents(game, phase === 'live');
-  const oddsHtml = (phase === 'live' || phase === 'upcoming') ? renderMatchOdds(game, phase === 'live') : '';
 
   return `
     <article class="se-card ${phase}" data-game-id="${game.id}">
@@ -1073,20 +1117,26 @@ function renderStreamCard(game) {
         <div class="se-side ${phase === 'live' ? 'live-side' : ''}">
           ${flagImg(homeId)}
           <span class="se-team">${homeName}</span>
-          <span class="se-score" data-home-score="${game.id}">${score ? score.home : ''}</span>
+          <div class="se-score-stack">
+            <span class="se-score" data-home-score="${game.id}">${score ? score.home : ''}</span>
+            ${renderMlOdds(game, 'home', phase)}
+          </div>
         </div>
         <div class="se-mid">
           <span class="se-vs">${score ? '-' : 'vs'}</span>
+          ${renderDrawOdds(game, phase)}
           ${pensHtml}
         </div>
         <div class="se-side ${phase === 'live' ? 'live-side' : ''}">
           ${flagImg(awayId)}
           <span class="se-team">${awayName}</span>
-          <span class="se-score" data-away-score="${game.id}">${score ? score.away : ''}</span>
+          <div class="se-score-stack">
+            <span class="se-score" data-away-score="${game.id}">${score ? score.away : ''}</span>
+            ${renderMlOdds(game, 'away', phase)}
+          </div>
         </div>
       </div>
       ${goalsHtml}
-      ${oddsHtml}
       <div class="se-foot ${phase === 'live' ? 'live-text' : ''}" data-countdown="${game.id}">${footText}</div>
     </article>`;
 }
@@ -1164,7 +1214,7 @@ function patchStreamCard(card, game) {
   }
 
   syncGoalEvents(card, game, phase === 'live');
-  syncMatchOdds(card, game, phase);
+  syncScoreOdds(card, game, phase);
 }
 
 function renderToday() {
