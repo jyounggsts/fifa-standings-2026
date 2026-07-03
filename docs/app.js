@@ -1600,15 +1600,6 @@ function tick() {
     });
   }
 
-  if (state.lastFetch) {
-    const ago = Math.floor((Date.now() - state.lastFetch) / 1000);
-    const sync = $('#sync-status');
-    if (sync) {
-      sync.textContent = `Synced ${ago}s ago`;
-      sync.className = 'sync-tag ' + (ago < 10 ? 'fresh' : '');
-    }
-  }
-
   let liveNow = false;
 
   $$('[data-countdown]').forEach((el) => {
@@ -1698,18 +1689,9 @@ function updateLiveFlags() {
   state.hasSoon = state.games.some(isGameSoon);
 }
 
-function setSyncStatus(text, tone = '') {
-  const sync = $('#sync-status');
-  if (!sync) return;
-  sync.textContent = text;
-  sync.className = tone ? `sync-tag ${tone}` : 'sync-tag';
-}
-
 function showLoadError(err) {
   const message = err?.message || 'Could not load match data';
   const html = `<p class="empty-msg error-msg">${escapeHtml(message)} <button type="button" class="retry-btn" onclick="loadData()">Retry</button></p>`;
-
-  setSyncStatus('Sync failed', 'error');
   $('#today-loading')?.remove();
   if ($('#today-timeline') && !state.games.length) $('#today-timeline').innerHTML = html;
   if ($('#bracket-board') && !state.games.length) $('#bracket-board').innerHTML = html;
@@ -1720,7 +1702,6 @@ function showLoadError(err) {
 async function loadData() {
   const btn = $('#refresh-btn');
   btn?.classList.add('spinning');
-  setSyncStatus('Syncing');
   try {
     const [teamsData, groupsData, gamesData] = await Promise.all([
       fetchJSON('teams'), fetchJSON('groups'), fetchJSON('games'),
@@ -1734,7 +1715,6 @@ async function loadData() {
     updateLiveFlags();
     await enrichGamesWithEspn();
 
-    setSyncStatus('Synced', 'fresh');
     renderHeaderStats();
     renderLiveBanner();
     renderToday();

@@ -154,9 +154,7 @@ a:hover { text-decoration: underline; }
   color: var(--muted);
 }
 
-.sync-tag { font-size: 0.68rem; color: var(--dim); }
-.sync-tag.fresh { color: var(--green); }
-.sync-tag.error { color: var(--red); }
+
 
 .icon-btn {
   background: var(--card);
@@ -1136,6 +1134,6 @@ a:hover { text-decoration: underline; }
 @media (max-width: 800px) {
   .split-row { grid-template-columns: 1fr; }
   .topnav { display: none; }
-  .top-clock, .sync-tag { display: none; }
+  .top-clock { display: none; }
   .card-grid { grid-template-columns: 1fr; }
 }
