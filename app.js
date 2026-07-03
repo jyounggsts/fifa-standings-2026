@@ -1886,24 +1886,77 @@ function initNav() {
   sections.forEach((s) => observer.observe(s));
 }
 
+function closeGoalClipOverlay(card) {
+  const overlay = card?.querySelector('.ge-clip-overlay');
+  if (!overlay) return;
+  const iframe = overlay.querySelector('iframe');
+  if (iframe) iframe.removeAttribute('src');
+  overlay.hidden = true;
+  card.classList.remove('has-clip-open');
+}
+
+function ensureGoalClipOverlay(card) {
+  let overlay = card.querySelector('.ge-clip-overlay');
+  if (overlay) return overlay;
+
+  card.insertAdjacentHTML('beforeend', `
+    <div class="ge-clip-overlay" hidden>
+      <div class="ge-clip-modal" role="dialog" aria-modal="true" aria-label="Goal highlight">
+        <div class="ge-clip-modal-head">
+          <span class="ge-clip-modal-title">Goal highlight</span>
+          <button type="button" class="ge-clip-close" aria-label="Close highlight">✕</button>
+        </div>
+        <div class="ge-clip-modal-body">
+          <iframe
+            title="Goal highlight"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+      </div>
+    </div>`);
+  return card.querySelector('.ge-clip-overlay');
+}
+
+function openGoalClipOverlay(card, videoId, title) {
+  document.querySelectorAll('.se-card.has-clip-open').forEach((c) => {
+    if (c !== card) closeGoalClipOverlay(c);
+  });
+  const overlay = ensureGoalClipOverlay(card);
+  const iframe = overlay.querySelector('iframe');
+  const titleEl = overlay.querySelector('.ge-clip-modal-title');
+  if (titleEl) titleEl.textContent = title || 'Goal highlight';
+  if (iframe) iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+  overlay.hidden = false;
+  card.classList.add('has-clip-open');
+}
+
 function initGoalClipControls() {
   document.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('.ge-clip-close');
+    if (closeBtn) {
+      closeGoalClipOverlay(closeBtn.closest('.se-card'));
+      return;
+    }
+
+    const backdrop = e.target.closest('.ge-clip-overlay');
+    if (backdrop && e.target === backdrop) {
+      closeGoalClipOverlay(backdrop.closest('.se-card'));
+      return;
+    }
+
     const btn = e.target.closest('.ge-clip-btn');
     if (!btn || btn.disabled) return;
     const videoId = btn.dataset.yt;
     if (!videoId) return;
-    const row = btn.closest('.goal-event');
-    if (!row || row.querySelector('.ge-clip-player')) return;
-    row.classList.add('is-expanded');
-    row.insertAdjacentHTML('beforeend', `
-      <div class="ge-clip-player">
-        <iframe
-          src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0"
-          title="Goal highlight"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen
-          referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      </div>`);
+    const card = btn.closest('.se-card');
+    if (!card) return;
+    openGoalClipOverlay(card, videoId, btn.title);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('.se-card.has-clip-open').forEach((card) => closeGoalClipOverlay(card));
   });
 }
 
