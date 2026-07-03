@@ -32,6 +32,7 @@ const state = {
   espnGoals: {},
   espnEventIds: {},
   espnKickoffs: {},
+  gameOdds: {},
   userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   lastFetch: null,
   pollTimer: null,
@@ -402,6 +403,158 @@ function matchGameToEspnEvent(game, events) {
   });
 }
 
+function formatAmericanOdds(val) {
+  if (val == null || val === '') return null;
+  const s = String(val).trim();
+  if (!s) return null;
+  if (s.startsWith('+') || s.startsWith('-')) return s;
+  const n = Number(s);
+  if (Number.isNaN(n)) return s;
+  return n > 0 ? `+${n}` : String(n);
+}
+
+function pickOddsVal(obj) {
+  return obj?.current?.odds ?? obj?.close?.odds ?? obj?.open?.odds ?? null;
+}
+
+function pickSpreadLine(obj) {
+  return obj?.current?.line ?? obj?.close?.line ?? obj?.open?.line ?? null;
+}
+
+function parseTotalLine(line) {
+  if (!line) return null;
+  return String(line).replace(/^[ou]/i, '');
+}
+
+function parseEspnOdds(oddsArr) {
+  const raw = oddsArr?.[0];
+  if (!raw) return null;
+
+  const ml = raw.moneyline || {};
+  const spread = raw.pointSpread || {};
+  const total = raw.total || {};
+
+  const homeMl = formatAmericanOdds(pickOddsVal(ml.home));
+  const awayMl = formatAmericanOdds(pickOddsVal(ml.away));
+  const drawMl = formatAmericanOdds(pickOddsVal(ml.draw) ?? raw.drawOdds?.moneyLine);
+
+  if (!homeMl && !awayMl && !drawMl) return null;
+
+  return {
+    provider: raw.provider?.displayName || raw.provider?.name || 'Sportsbook',
+    summary: raw.details || '',
+    moneyline: { home: homeMl, away: awayMl, draw: drawMl },
+    spread: {
+      homeLine: pickSpreadLine(spread.home),
+      homeOdds: formatAmericanOdds(pickOddsVal(spread.home)),
+      awayLine: pickSpreadLine(spread.away),
+      awayOdds: formatAmericanOdds(pickOddsVal(spread.away)),
+    },
+    total: {
+      line: raw.overUnder ?? parseTotalLine(total.over?.current?.line) ?? parseTotalLine(total.over?.close?.line),
+      over: formatAmericanOdds(pickOddsVal(total.over)),
+      under: formatAmericanOdds(pickOddsVal(total.under)),
+    },
+  };
+}
+
+function getGameOdds(gameId) {
+  return state.gameOdds[gameId] || null;
+}
+
+function oddsFingerprint(odds) {
+  return odds ? JSON.stringify(odds) : '';
+}
+
+function renderOddsChip(label, value, cls = '') {
+  if (!value) return `<span class="odds-chip empty ${cls}"><em>${label}</em> —</span>`;
+  return `<span class="odds-chip ${cls}"><em>${label}</em> ${value}</span>`;
+}
+
+function renderMatchOdds(game, live = false) {
+  const odds = getGameOdds(game.id);
+  if (!odds) return '';
+  const fp = oddsFingerprint(odds);
+  const totalLine = odds.total.line ?? '—';
+  const spreadHome = odds.spread.homeLine && odds.spread.homeOdds
+    ? `${odds.spread.homeLine} (${odds.spread.homeOdds})` : null;
+  const spreadAway = odds.spread.awayLine && odds.spread.awayOdds
+    ? `${odds.spread.awayLine} (${odds.spread.awayOdds})` : null;
+
+  return `
+    <div class="match-odds ${live ? 'live-odds' : ''}" data-odds="${game.id}" data-odds-fp="${fp}">
+      <div class="odds-head">
+        <span>${live ? 'Live Odds' : 'Odds'}</span>
+        <span class="odds-provider">${escapeHtml(odds.provider)}</span>
+      </div>
+      <div class="odds-grid">
+        <div class="odds-row">
+          <span class="odds-label">Moneyline</span>
+          <div class="odds-chips">
+            ${renderOddsChip('H', odds.moneyline.home, 'home')}
+            ${renderOddsChip('D', odds.moneyline.draw, 'draw')}
+            ${renderOddsChip('A', odds.moneyline.away, 'away')}
+          </div>
+        </div>
+        ${(spreadHome || spreadAway) ? `
+        <div class="odds-row">
+          <span class="odds-label">Spread</span>
+          <div class="odds-chips">
+            ${spreadHome ? `<span class="odds-chip home"><em>H</em> ${spreadHome}</span>` : ''}
+            ${spreadAway ? `<span class="odds-chip away"><em>A</em> ${spreadAway}</span>` : ''}
+          </div>
+        </div>` : ''}
+        ${(odds.total.over || odds.total.under) ? `
+        <div class="odds-row">
+          <span class="odds-label">Total ${totalLine}</span>
+          <div class="odds-chips">
+            ${renderOddsChip('O', odds.total.over, 'over')}
+            ${renderOddsChip('U', odds.total.under, 'under')}
+          </div>
+        </div>` : ''}
+      </div>
+      ${odds.summary ? `<div class="odds-summary">${escapeHtml(odds.summary)}</div>` : ''}
+    </div>`;
+}
+
+function syncMatchOdds(card, game, phase) {
+  const el = card.querySelector(`[data-odds="${game.id}"]`);
+  const show = phase === 'live' || phase === 'upcoming';
+
+  if (!show) {
+    el?.remove();
+    return;
+  }
+
+  const odds = getGameOdds(game.id);
+  if (!odds) {
+    el?.remove();
+    return;
+  }
+
+  const fp = oddsFingerprint(odds);
+  if (el?.dataset.oddsFp === fp) return;
+
+  const html = renderMatchOdds(game, phase === 'live');
+  if (!el) {
+    card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', html);
+    return;
+  }
+  el.outerHTML = html;
+}
+
+function renderBracketOdds(game) {
+  const phase = getMatchPhase(game);
+  const odds = getGameOdds(game.id);
+  if (!odds || phase === 'finished') return '';
+  const parts = [];
+  if (odds.moneyline.home) parts.push(`H ${odds.moneyline.home}`);
+  if (odds.moneyline.draw) parts.push(`D ${odds.moneyline.draw}`);
+  if (odds.moneyline.away) parts.push(`A ${odds.moneyline.away}`);
+  if (!parts.length) return '';
+  return `<div class="b-odds" data-odds="${game.id}">${parts.join(' · ')}</div>`;
+}
+
 function calcShotDistance(x, y) {
   const dx = ((100 - x) / 100) * FIELD_LENGTH_M;
   const dy = ((y - 50) / 100) * FIELD_WIDTH_M;
@@ -471,11 +624,15 @@ async function fetchEspnGoalsForGame(gameId, espnEventId) {
 }
 
 async function enrichGamesWithEspn() {
-  const now = new Date();
-  const targets = state.games.filter((g) => {
+  const oddsTargets = state.games.filter((g) => {
     const phase = getMatchPhase(g);
-    return phase === 'live' || isKickoffToday(g);
+    return phase === 'live' || phase === 'upcoming';
   });
+  const goalTargets = state.games.filter((g) => isGameLive(g) || isKickoffToday(g));
+  const targets = [...new Set([...oddsTargets, ...goalTargets].map((g) => g.id))]
+    .map((id) => state.games.find((g) => String(g.id) === String(id)))
+    .filter(Boolean);
+
   if (!targets.length) return;
 
   const dates = [...new Set(targets.flatMap((g) => espnScoreboardDates(parseGameKickoff(g))))];
@@ -489,6 +646,14 @@ async function enrichGamesWithEspn() {
     if (!espnEvent) return;
     state.espnEventIds[game.id] = espnEvent.id;
     if (espnEvent.date) state.espnKickoffs[game.id] = new Date(espnEvent.date);
+
+    const parsedOdds = parseEspnOdds(espnEvent.competitions?.[0]?.odds);
+    if (parsedOdds) {
+      state.gameOdds[game.id] = parsedOdds;
+    }
+
+    if (!isGameLive(game) && !isKickoffToday(game)) return;
+
     try {
       const prev = state.espnGoals[game.id];
       await fetchEspnGoalsForGame(game.id, espnEvent.id);
@@ -893,6 +1058,7 @@ function renderStreamCard(game) {
     ? `<span class="se-pens">(${score.pens.home}-${score.pens.away} pens)</span>` : '';
   const trackerHtml = phase === 'live' ? renderLiveTracker(game) : '';
   const goalsHtml = renderGoalEvents(game, phase === 'live');
+  const oddsHtml = (phase === 'live' || phase === 'upcoming') ? renderMatchOdds(game, phase === 'live') : '';
 
   return `
     <article class="se-card ${phase}" data-game-id="${game.id}">
@@ -920,6 +1086,7 @@ function renderStreamCard(game) {
         </div>
       </div>
       ${goalsHtml}
+      ${oddsHtml}
       <div class="se-foot ${phase === 'live' ? 'live-text' : ''}" data-countdown="${game.id}">${footText}</div>
     </article>`;
 }
@@ -997,6 +1164,7 @@ function patchStreamCard(card, game) {
   }
 
   syncGoalEvents(card, game, phase === 'live');
+  syncMatchOdds(card, game, phase);
 }
 
 function renderToday() {
@@ -1099,6 +1267,7 @@ function renderBracketMatch(game) {
       <div class="b-match-id">${getStageLabel(game)} #${game.id}</div>
       ${renderBracketTeam(game, 'home', winnerSide, phase)}
       ${renderBracketTeam(game, 'away', winnerSide, phase)}
+      ${renderBracketOdds(game)}
     </div>`;
 }
 
