@@ -1,13 +1,10 @@
 {
-  "fetchedAt": "2026-07-03T18:54:53.575Z",
+  "fetchedAt": "2026-07-03T18:55:16.339Z",
   "foxSports": {
-    "videoId": "OJlwIdoFz9A",
-    "title": "Australia vs Egypt 🇦🇺🇪🇬 2026 FIFA World Cup™ | Round of 32",
+    "videoId": "II84TKpzJY4",
+    "title": "",
     "isLive": true,
-    "parsedTeams": [
-      "Australia",
-      "Egypt"
-    ],
+    "parsedTeams": [],
     "channelUrl": "https://www.youtube.com/@FOXSports/live"
   }
 }
