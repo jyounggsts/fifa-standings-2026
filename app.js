@@ -490,9 +490,13 @@ async function enrichGamesWithEspn() {
     state.espnEventIds[game.id] = espnEvent.id;
     if (espnEvent.date) state.espnKickoffs[game.id] = new Date(espnEvent.date);
     try {
+      const prev = state.espnGoals[game.id];
       await fetchEspnGoalsForGame(game.id, espnEvent.id);
+      if (!state.espnGoals[game.id]?.length && prev?.length) {
+        state.espnGoals[game.id] = prev;
+      }
     } catch {
-      /* ESPN enrichment is best-effort */
+      /* ESPN enrichment is best-effort — keep any goals we already have */
     }
   }));
 }
@@ -545,11 +549,21 @@ function getProgressPercent(game) {
   return Math.min(Math.round((min / 90) * 100), 100);
 }
 
-function renderGoalEvents(game, live = false) {
-  const goals = getGameGoals(game);
-  if (!goals.length) return '';
-  const cls = live ? 'goal-events live-goals' : 'goal-events';
-  const rows = goals.map((g) => `
+function goalsFingerprint(goals) {
+  return (goals || []).map((g) => [
+    g.side, g.minute, g.player, g.type, g.assist || '', g.distance || '', g.shotDetail || '',
+  ].join('|')).join(';');
+}
+
+function goalBadgeLabel(type) {
+  if (type === 'penalty') return 'PEN';
+  if (type === 'own_goal') return 'OG';
+  if (type === 'header') return 'HDR';
+  return 'GOAL';
+}
+
+function renderGoalEventRow(g) {
+  return `
     <div class="goal-event ${g.side}">
       <span class="ge-min">${g.minute}'</span>
       <div class="ge-body">
@@ -557,15 +571,75 @@ function renderGoalEvents(game, live = false) {
         <span class="ge-detail">${escapeHtml(g.shotDetail)}${g.distance ? ` · <strong>${g.distance}</strong>` : ''}</span>
         ${g.assist ? `<span class="ge-assist">Assist: ${escapeHtml(g.assist)}</span>` : ''}
       </div>
-      <span class="ge-badge ${g.type}">${g.type === 'penalty' ? 'PEN' : g.type === 'own_goal' ? 'OG' : g.type === 'header' ? 'HDR' : 'GOAL'}</span>
-    </div>`).join('');
+      <span class="ge-badge ${g.type}">${goalBadgeLabel(g.type)}</span>
+    </div>`;
+}
+
+function animateNewGoalRow(row) {
+  if (!row) return;
+  row.classList.add('goal-event-new');
+  row.addEventListener('animationend', () => row.classList.remove('goal-event-new'), { once: true });
+}
+
+function syncGoalEvents(card, game, live = false) {
+  const goals = getGameGoals(game);
+  const fp = goalsFingerprint(goals);
+  let el = card.querySelector(`[data-goals="${game.id}"]`);
+
+  if (!goals.length) {
+    el?.remove();
+    return;
+  }
+
+  if (el?.dataset.goalsFp === fp) return;
+
+  const prevCount = Number(el?.dataset.goalsCount || 0);
+  const canAppend = el
+    && goals.length > prevCount
+    && goalsFingerprint(goals.slice(0, prevCount)) === el.dataset.goalsFp;
+
+  if (!el) {
+    card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', renderGoalEvents(game, live));
+    el = card.querySelector(`[data-goals="${game.id}"]`);
+    if (!el) return;
+    el.dataset.goalsFp = fp;
+    el.dataset.goalsCount = String(goals.length);
+    animateNewGoalRow(el.querySelector('.goal-event:last-child'));
+    return;
+  }
+
+  if (canAppend) {
+    for (let i = prevCount; i < goals.length; i += 1) {
+      el.insertAdjacentHTML('beforeend', renderGoalEventRow(goals[i]));
+      animateNewGoalRow(el.querySelector('.goal-event:last-child'));
+    }
+    const countEl = el.querySelector('.goal-count');
+    if (countEl) countEl.textContent = goals.length;
+    el.dataset.goalsFp = fp;
+    el.dataset.goalsCount = String(goals.length);
+    return;
+  }
+
+  el.querySelectorAll('.goal-event').forEach((row) => row.remove());
+  el.insertAdjacentHTML('beforeend', goals.map((g) => renderGoalEventRow(g)).join(''));
+  const countEl = el.querySelector('.goal-count');
+  if (countEl) countEl.textContent = goals.length;
+  el.dataset.goalsFp = fp;
+  el.dataset.goalsCount = String(goals.length);
+}
+
+function renderGoalEvents(game, live = false) {
+  const goals = getGameGoals(game);
+  if (!goals.length) return '';
+  const cls = live ? 'goal-events live-goals' : 'goal-events';
+  const fp = goalsFingerprint(goals);
   return `
-    <div class="${cls}" data-goals="${game.id}">
+    <div class="${cls}" data-goals="${game.id}" data-goals-fp="${fp}" data-goals-count="${goals.length}">
       <div class="goal-events-head">
         <span>Goal Events</span>
         <span class="goal-count">${goals.length}</span>
       </div>
-      ${rows}
+      ${goals.map((g) => renderGoalEventRow(g)).join('')}
     </div>`;
 }
 
@@ -850,8 +924,82 @@ function renderStreamCard(game) {
     </article>`;
 }
 
+function patchStreamCard(card, game) {
+  const phase = getMatchPhase(game);
+  const score = getScore(game);
+  const elapsed = getElapsedDisplay(game);
+
+  card.className = `se-card ${phase}`;
+
+  const top = card.querySelector('.se-card-top');
+  if (top) {
+    if (phase === 'live') {
+      top.querySelector('.se-ft-tag')?.remove();
+      if (!top.querySelector('.se-live-tag')) {
+        top.insertAdjacentHTML('beforeend', '<span class="se-live-tag">LIVE</span>');
+      }
+    } else if (phase === 'finished') {
+      top.querySelector('.se-live-tag')?.remove();
+      if (!top.querySelector('.se-ft-tag')) {
+        top.insertAdjacentHTML('beforeend', '<span class="se-ft-tag">FT</span>');
+      }
+    } else {
+      top.querySelector('.se-live-tag')?.remove();
+      top.querySelector('.se-ft-tag')?.remove();
+    }
+  }
+
+  const tracker = card.querySelector(`[data-tracker="${game.id}"]`);
+  if (phase === 'live') {
+    if (!tracker) {
+      card.querySelector('.se-card-top')?.insertAdjacentHTML('afterend', renderLiveTracker(game));
+    } else {
+      const periodEl = card.querySelector(`[data-live-period="${game.id}"]`);
+      const minuteEl = card.querySelector(`[data-live-minute="${game.id}"]`);
+      const progressEl = card.querySelector(`[data-live-progress="${game.id}"]`);
+      if (periodEl) periodEl.textContent = getMatchPeriod(game);
+      if (minuteEl) minuteEl.textContent = elapsed || 'LIVE';
+      if (progressEl) progressEl.style.width = `${getProgressPercent(game)}%`;
+    }
+  } else {
+    tracker?.remove();
+  }
+
+  const homeScore = card.querySelector(`[data-home-score="${game.id}"]`);
+  const awayScore = card.querySelector(`[data-away-score="${game.id}"]`);
+  const vs = card.querySelector('.se-vs');
+  if (score) {
+    if (homeScore) homeScore.textContent = score.home;
+    if (awayScore) awayScore.textContent = score.away;
+    if (vs) vs.textContent = '-';
+  } else {
+    if (homeScore) homeScore.textContent = '';
+    if (awayScore) awayScore.textContent = '';
+    if (vs) vs.textContent = 'vs';
+  }
+
+  card.querySelectorAll('.se-side').forEach((side) => {
+    side.classList.toggle('live-side', phase === 'live');
+  });
+
+  const foot = card.querySelector(`[data-countdown="${game.id}"]`);
+  if (foot) {
+    if (phase === 'live') {
+      foot.textContent = elapsed ? `LIVE · ${elapsed}` : 'LIVE';
+      foot.className = 'se-foot live-text';
+    } else if (phase === 'upcoming') {
+      foot.textContent = getUpcomingStatus(game);
+      foot.className = 'se-foot';
+    } else {
+      foot.textContent = 'Full Time';
+      foot.className = 'se-foot';
+    }
+  }
+
+  syncGoalEvents(card, game, phase === 'live');
+}
+
 function renderToday() {
-  const now = new Date();
   const todayGames = state.games
     .filter((g) => isKickoffToday(g))
     .sort((a, b) => parseGameKickoff(a) - parseGameKickoff(b));
@@ -873,7 +1021,21 @@ function renderToday() {
     container.innerHTML = '<p class="empty-msg">No matches scheduled for today.</p>';
     return;
   }
-  container.innerHTML = todayGames.map(renderStreamCard).join('');
+
+  const nextIds = new Set(todayGames.map((g) => String(g.id)));
+  container.querySelectorAll('.se-card[data-game-id]').forEach((card) => {
+    if (!nextIds.has(card.dataset.gameId)) card.remove();
+  });
+
+  todayGames.forEach((game) => {
+    const id = String(game.id);
+    let card = container.querySelector(`.se-card[data-game-id="${id}"]`);
+    if (card) {
+      patchStreamCard(card, game);
+    } else {
+      container.insertAdjacentHTML('beforeend', renderStreamCard(game));
+    }
+  });
 }
 
 function renderLiveBanner() {
@@ -1166,14 +1328,6 @@ function updateLiveCard(card, game, elapsed) {
       'beforeend',
       '<span class="se-live-tag">LIVE</span>',
     );
-  }
-
-  const goalsEl = card.querySelector(`[data-goals="${game.id}"]`);
-  const goalsHtml = renderGoalEvents(game, true);
-  if (goalsHtml && !goalsEl) {
-    card.querySelector('.se-foot')?.insertAdjacentHTML('beforebegin', goalsHtml);
-  } else if (goalsHtml && goalsEl) {
-    goalsEl.outerHTML = goalsHtml;
   }
 
   if (!card.querySelector(`[data-tracker="${game.id}"]`)) {

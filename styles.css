@@ -487,7 +487,7 @@ a:hover { text-decoration: underline; }
   padding: 0.5rem 0.65rem 0.35rem;
 }
 
-.goal-events.live-goals .goal-event:last-child {
+.goal-event.goal-event-new {
   animation: goal-pop 0.45s ease-out;
 }
 
