@@ -721,14 +721,35 @@ function watchPanelFingerprint(game, phase) {
   return JSON.stringify({ phase, embed, options: getWatchOptions(game) });
 }
 
+const YT_IFRAME_ALLOW = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+
+function youtubeEmbedUrl(videoId, { autoplay = false } = {}) {
+  const params = new URLSearchParams({
+    rel: '0',
+    playsinline: '1',
+    modestbranding: '1',
+  });
+  if (autoplay) params.set('autoplay', '1');
+  try {
+    const { origin, href } = window.location;
+    if (origin && origin !== 'null') {
+      params.set('origin', origin);
+      params.set('widget_referrer', href);
+    }
+  } catch {
+    /* ignore */
+  }
+  return `https://www.youtube.com/embed/${videoId}?${params}`;
+}
+
 function renderWatchPlayer(embed) {
   if (!embed) return '';
   return `
     <div class="watch-player">
       <iframe
-        src="https://www.youtube.com/embed/${embed.videoId}?autoplay=0&rel=0"
+        src="${youtubeEmbedUrl(embed.videoId)}"
         title="${escapeHtml(embed.title)}"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allow="${YT_IFRAME_ALLOW}"
         allowfullscreen
         loading="lazy"
         referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -1886,12 +1907,6 @@ function initNav() {
   sections.forEach((s) => observer.observe(s));
 }
 
-const GOAL_PIP_IFRAME_ALLOW = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-
-function goalPipEmbedUrl(videoId) {
-  return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1`;
-}
-
 function closeGoalPipPopout() {
   const pip = $('#goal-pip');
   const iframe = pip?.querySelector('iframe');
@@ -1913,7 +1928,7 @@ function ensureGoalPipPopout() {
       <div class="goal-pip-body">
         <iframe
           title="Goal highlight"
-          allow="${GOAL_PIP_IFRAME_ALLOW}"
+          allow="${YT_IFRAME_ALLOW}"
           allowfullscreen
           referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
@@ -1966,66 +1981,18 @@ function initGoalPipDrag(pip) {
   });
 }
 
-async function openDocumentGoalPip(videoId, title) {
-  if (!window.documentPictureInPicture) return false;
-  try {
-    const pipWindow = await documentPictureInPicture.requestWindow({
-      width: 420,
-      height: 260,
-    });
-    const safeTitle = escapeHtml(title || 'Goal highlight');
-    pipWindow.document.head.innerHTML = `
-      <style>
-        * { box-sizing: border-box; margin: 0; }
-        body {
-          background: #121212;
-          color: #f2f2f2;
-          font: 600 12px/1.3 system-ui, sans-serif;
-          overflow: hidden;
-        }
-        .head {
-          padding: 8px 10px;
-          border-bottom: 1px solid #2a2a2a;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        iframe {
-          display: block;
-          width: 100vw;
-          height: calc(100vh - 33px);
-          border: 0;
-          background: #000;
-        }
-      </style>`;
-    pipWindow.document.body.innerHTML = `
-      <div class="head">${safeTitle}</div>
-      <iframe
-        src="${goalPipEmbedUrl(videoId)}"
-        title="Goal highlight"
-        allow="${GOAL_PIP_IFRAME_ALLOW}"
-        allowfullscreen
-        referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-    pipWindow.addEventListener('pagehide', closeGoalPipPopout, { once: true });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function openGoalPipPopout(videoId, title) {
   const pip = ensureGoalPipPopout();
   const iframe = pip.querySelector('iframe');
   const titleEl = pip.querySelector('.goal-pip-title');
   if (titleEl) titleEl.textContent = title || 'Goal highlight';
-  if (iframe) iframe.src = goalPipEmbedUrl(videoId);
+  if (iframe) iframe.src = youtubeEmbedUrl(videoId, { autoplay: true });
   pip.hidden = false;
 }
 
-async function openGoalClipPlayer(videoId, title) {
+function openGoalClipPlayer(videoId, title) {
   closeGoalPipPopout();
-  const usedBrowserPip = await openDocumentGoalPip(videoId, title);
-  if (!usedBrowserPip) openGoalPipPopout(videoId, title);
+  openGoalPipPopout(videoId, title);
 }
 
 function initGoalClipControls() {
