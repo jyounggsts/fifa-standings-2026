@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-03T19:05:03.561Z",
+  "fetchedAt": "2026-07-03T19:55:07.743Z",
   "games": {
     "83": {
       "goals": {
@@ -26,6 +26,13 @@
           "thumb": "https://i.ytimg.com/vi/T9t2F41kqG8/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-03T19:04:26.080Z"
+        },
+        "home|55|Mohamed Hany": {
+          "videoId": "vzUdJ51WH48",
+          "title": "Mohamed Hany Own Goal هدف عكسي لمحمد هاني | مصر ضد أستراليا | Egypt vs Australia | Fifa World Cup 26",
+          "thumb": "https://i.ytimg.com/vi/vzUdJ51WH48/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-03T19:55:09.877Z"
         }
       }
     }
