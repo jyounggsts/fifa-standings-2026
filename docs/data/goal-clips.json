@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-04T20:01:32.968Z",
+  "fetchedAt": "2026-07-04T23:44:05.103Z",
   "games": {
     "83": {
       "goals": {
@@ -50,6 +50,17 @@
           "thumb": "https://i.ytimg.com/vi/vzUdJ51WH48/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-03T19:55:09.877Z"
+        }
+      }
+    },
+    "89": {
+      "goals": {
+        "away|70|Kylian Mbappé": {
+          "videoId": "sQ_DO_JnTbY",
+          "title": "Kylian Mbappé Scores Brace vs Sweden 🇫🇷 Third in 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/sQ_DO_JnTbY/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-04T23:44:06.007Z"
         }
       }
     },
