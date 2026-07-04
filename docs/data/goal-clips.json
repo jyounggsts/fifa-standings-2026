@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-03T20:42:57.501Z",
+  "fetchedAt": "2026-07-04T07:29:56.937Z",
   "games": {
     "83": {
       "goals": {
@@ -16,6 +16,23 @@
       "goals": {}
     },
     "85": {
+      "goals": {}
+    },
+    "86": {
+      "goals": {
+        "home|29|Lionel Messi": {
+          "videoId": null,
+          "espnId": 49262253,
+          "title": "Buenos Aires goes wild for Messi's opening goal vs. Cape Verde",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0703/dm_260703_Buenos_Aires_goes_mad_for_Messis_opening_goal_vs_Cape_Verde/dm_260703_Buenos_Aires_goes_mad_for_Messis_opening_goal_vs_Cape_Verde.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49262253/buenos-aires-goes-wild-messi-opening-goal-vs-cape-verde",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-04T07:29:57.912Z"
+        }
+      }
+    },
+    "87": {
       "goals": {}
     },
     "88": {
