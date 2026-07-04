@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-04T15:47:28.602Z",
+  "fetchedAt": "2026-07-04T20:01:32.968Z",
   "games": {
     "83": {
       "goals": {
@@ -50,6 +50,24 @@
           "thumb": "https://i.ytimg.com/vi/vzUdJ51WH48/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-03T19:55:09.877Z"
+        }
+      }
+    },
+    "90": {
+      "goals": {
+        "away|50|Azzedine Ounahi": {
+          "videoId": "oM4GjG3i7p4",
+          "title": "2-0 FOR MOROCCO LATE 🇲🇦 A beautiful run for the Atlas Lions and Azzedine Ounahi bags his brace!",
+          "thumb": "https://i.ytimg.com/vi/oM4GjG3i7p4/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-04T20:01:35.307Z"
+        },
+        "away|82|Azzedine Ounahi": {
+          "videoId": "oM4GjG3i7p4",
+          "title": "2-0 FOR MOROCCO LATE 🇲🇦 A beautiful run for the Atlas Lions and Azzedine Ounahi bags his brace!",
+          "thumb": "https://i.ytimg.com/vi/oM4GjG3i7p4/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-04T20:01:36.377Z"
         }
       }
     }
