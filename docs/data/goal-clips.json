@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-05T18:48:34.589Z",
+  "fetchedAt": "2026-07-05T22:33:31.264Z",
   "games": {
     "83": {
       "goals": {
@@ -79,6 +79,37 @@
           "thumb": "https://i.ytimg.com/vi/oM4GjG3i7p4/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-04T20:01:36.377Z"
+        }
+      }
+    },
+    "91": {
+      "goals": {
+        "away|79|Erling Haaland": {
+          "videoId": null,
+          "espnId": 49280183,
+          "title": "Erling Haaland goal vs. Brazil sends Oslo into raptures",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49280183/erling-haaland-goal-vs-brazil-sends-oslo-raptures",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-05T22:33:32.611Z"
+        },
+        "away|90|Erling Haaland": {
+          "videoId": null,
+          "espnId": 49280183,
+          "title": "Erling Haaland goal vs. Brazil sends Oslo into raptures",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49280183/erling-haaland-goal-vs-brazil-sends-oslo-raptures",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-05T22:33:32.611Z"
+        },
+        "home|90+10|Neymar": {
+          "videoId": "WQRsI5hYH9Q",
+          "title": "Neymar Jr. Scores Penalty In Final Minutes of Brazil's 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/WQRsI5hYH9Q/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-05T22:33:33.935Z"
         }
       }
     }
