@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-06T19:23:12.129Z",
+  "fetchedAt": "2026-07-06T23:40:55.366Z",
   "games": {
     "83": {
       "goals": {
@@ -151,6 +151,20 @@
           "thumb": "https://i.ytimg.com/vi/FjfzHEhC4B8/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-06T13:01:17.714Z"
+        }
+      }
+    },
+    "93": {
+      "goals": {
+        "away|90+1|Mikel Merino": {
+          "videoId": null,
+          "espnId": 49289948,
+          "title": "Portuguese heartbreak in Lisbon as Merino scores winner for Spain",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0706/dm_260706_COM_SOC_Analysis_Portuguese_heartbreak_in_Lisbon_as_Merino_scores_winner_for_Spain_GLOBAL_2026-07-/dm_260706_COM_SOC_Analysis_Portuguese_heartbreak_in_Lisbon_as_Merino_scores_winner_for_Spain_GLOBAL_2026-07-.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49289948/portuguese-heartbreak-lisbon-merino-scores-winner-spain",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T23:40:56.481Z"
         }
       }
     }
