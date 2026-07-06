@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-05T22:33:31.264Z",
+  "fetchedAt": "2026-07-06T13:01:16.629Z",
   "games": {
     "83": {
       "goals": {
@@ -110,6 +110,47 @@
           "thumb": "https://i.ytimg.com/vi/WQRsI5hYH9Q/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-05T22:33:33.935Z"
+        }
+      }
+    },
+    "92": {
+      "goals": {
+        "away|36|Jude Bellingham": {
+          "videoId": null,
+          "espnId": 49282688,
+          "title": "Bellingham bags brace in 99 seconds against Mexico",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49282688/bellingham-bags-brace-99-seconds-mexico",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        },
+        "away|38|Jude Bellingham": {
+          "videoId": null,
+          "espnId": 49282688,
+          "title": "Bellingham bags brace in 99 seconds against Mexico",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49282688/bellingham-bags-brace-99-seconds-mexico",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        },
+        "home|42|Julián Quiñones": {
+          "videoId": null,
+          "espnId": 49282524,
+          "title": "Quiñones goal causes chaos in Mexico City",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/dm_260705_Quinones_goal_causes_chaos_in_Mexico_City/dm_260705_Quinones_goal_causes_chaos_in_Mexico_City.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49282524/quinones-goal-causes-chaos-mexico-city",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        },
+        "away|60|Harry Kane": {
+          "videoId": "FjfzHEhC4B8",
+          "title": "Harry Kane SCORES penalty to extend England's lead vs Mexico 🏴󠁧󠁢󠁥󠁮󠁧󠁿 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/FjfzHEhC4B8/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-06T13:01:17.714Z"
         }
       }
     }
