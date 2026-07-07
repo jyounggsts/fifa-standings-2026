@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-07T10:41:27.498Z",
+  "fetchedAt": "2026-07-07T18:26:56.839Z",
   "games": {
     "83": {
       "goals": {
@@ -176,6 +176,45 @@
           "thumb": "https://i.ytimg.com/vi/E59qXbuX-F0/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-07T10:41:28.293Z"
+        }
+      }
+    },
+    "95": {
+      "goals": {
+        "away|15|Yasser Ibrahim": {
+          "videoId": "lLXF65ddt5w",
+          "title": "Egypt Takes LEAD 🚨 | Yasser Ibrahim Powers Home Header vs Argentina",
+          "thumb": "https://i.ytimg.com/vi/lLXF65ddt5w/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:26:59.225Z"
+        },
+        "away|67|Mostafa Zico": {
+          "videoId": "70Z0xTZaB0U",
+          "title": "That's just beautiful from Egypt! Mostafa Ziko with the free header to level the score!",
+          "thumb": "https://i.ytimg.com/vi/70Z0xTZaB0U/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:00.617Z"
+        },
+        "home|79|Cristian Romero": {
+          "videoId": "rCWOjMVaoWE",
+          "title": "A perfectly placed header from Cristian Romero",
+          "thumb": "https://i.ytimg.com/vi/rCWOjMVaoWE/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:01.881Z"
+        },
+        "home|83|Lionel Messi": {
+          "videoId": "7lnPk1BZbV0",
+          "title": "MESSI MAGIC ⭐️  Lionel Messi Scores His 20th FIFA World Cup™ Goal For Argentina",
+          "thumb": "https://i.ytimg.com/vi/7lnPk1BZbV0/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:01.881Z"
+        },
+        "home|90+2|Enzo Fernández": {
+          "videoId": "8RVeJch_Sy0",
+          "title": "Gol de Enzo Fernández, Enzo  Fernández Goal, Argentina vs Egypt 3-2 FIFA World Cup 2026",
+          "thumb": "https://i.ytimg.com/vi/8RVeJch_Sy0/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:03.118Z"
         }
       }
     }
