@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-06T23:40:55.366Z",
+  "fetchedAt": "2026-07-07T10:41:27.498Z",
   "games": {
     "83": {
       "goals": {
@@ -165,6 +165,17 @@
           "source": "espn",
           "score": 2,
           "matchedAt": "2026-07-06T23:40:56.481Z"
+        }
+      }
+    },
+    "94": {
+      "goals": {
+        "away|90+3|Romelu Lukaku": {
+          "videoId": "E59qXbuX-F0",
+          "title": "Belgium's Romelu Lukaku Scores Goal to Seal Win Against United States | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/E59qXbuX-F0/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T10:41:28.293Z"
         }
       }
     }
