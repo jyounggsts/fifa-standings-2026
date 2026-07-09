@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-09T17:33:14.803Z",
+  "fetchedAt": "2026-07-09T22:46:45.129Z",
   "games": {
     "83": {
       "goals": {
@@ -215,6 +215,24 @@
           "thumb": "https://i.ytimg.com/vi/8RVeJch_Sy0/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-07T18:27:03.118Z"
+        }
+      }
+    },
+    "97": {
+      "goals": {
+        "home|60|Kylian Mbappé": {
+          "videoId": "YKAGdwFrCck",
+          "title": "Mbappé Gives France LEAD 🚨 Kylian Mbappé Scores Penalty for his 19th FIFA World Cup™ Goal",
+          "thumb": "https://i.ytimg.com/vi/YKAGdwFrCck/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-09T22:46:47.663Z"
+        },
+        "home|66|Ousmane Dembélé": {
+          "videoId": "A6z5LVU0YIQ",
+          "title": "Dembélé EXTENDS Lead 🚨 France’s Ousmane Dembélé Scores Goal From Outside the Box vs Morocco",
+          "thumb": "https://i.ytimg.com/vi/A6z5LVU0YIQ/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-09T22:46:48.840Z"
         }
       }
     }
