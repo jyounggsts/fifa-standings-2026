@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-10T17:23:57.471Z",
+  "fetchedAt": "2026-07-10T21:34:06.196Z",
   "games": {
     "83": {
       "goals": {
@@ -233,6 +233,31 @@
           "thumb": "https://i.ytimg.com/vi/A6z5LVU0YIQ/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-09T22:46:48.840Z"
+        }
+      }
+    },
+    "98": {
+      "goals": {
+        "home|30|Fabián Ruiz": {
+          "videoId": "ny57OyDC2HA",
+          "title": "Spain GOAL 🇪🇸 Fabián Ruiz Scores Goal vs Belgium | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/ny57OyDC2HA/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-10T21:34:07.160Z"
+        },
+        "away|41|Charles De Ketelaere": {
+          "videoId": "jQ5yDLwBh5M",
+          "title": "Belgium EQUALIZER 🚨 Charles De Ketelaere Scores BRILLIANT Header vs Spain",
+          "thumb": "https://i.ytimg.com/vi/jQ5yDLwBh5M/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-10T21:34:08.450Z"
+        },
+        "home|88|Mikel Merino": {
+          "videoId": "tOwNhYXBj2k",
+          "title": "Spain's Mikel Merino Scores Go-Ahead Stoppage-Time Goal vs Portugal | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/tOwNhYXBj2k/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-10T21:34:08.451Z"
         }
       }
     }
