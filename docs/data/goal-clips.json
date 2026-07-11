@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-11T20:28:50.691Z",
+  "fetchedAt": "2026-07-11T23:37:21.928Z",
   "games": {
     "83": {
       "goals": {
@@ -258,6 +258,31 @@
           "thumb": "https://i.ytimg.com/vi/tOwNhYXBj2k/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-10T21:34:08.451Z"
+        }
+      }
+    },
+    "99": {
+      "goals": {
+        "home|36|Andreas Schjelderup": {
+          "videoId": "wqaisl4jGzc",
+          "title": "SPECTACULAR Norway Goal 😱 Andreas Schjelderup puts it in the top corner vs England",
+          "thumb": "https://i.ytimg.com/vi/wqaisl4jGzc/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-11T23:37:24.368Z"
+        },
+        "away|45+2|Jude Bellingham": {
+          "videoId": "BcrEqo6QwqU",
+          "title": "Jude Bellingham STUNS Mexico With Two Quick Goals to Give England a lead | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/BcrEqo6QwqU/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-11T23:37:24.369Z"
+        },
+        "away|93|Jude Bellingham": {
+          "videoId": "BcrEqo6QwqU",
+          "title": "Jude Bellingham STUNS Mexico With Two Quick Goals to Give England a lead | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/BcrEqo6QwqU/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-11T23:37:24.369Z"
         }
       }
     }
