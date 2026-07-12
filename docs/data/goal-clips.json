@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-11T23:37:21.928Z",
+  "fetchedAt": "2026-07-12T07:48:45.563Z",
   "games": {
     "83": {
       "goals": {
@@ -283,6 +283,17 @@
           "thumb": "https://i.ytimg.com/vi/BcrEqo6QwqU/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-11T23:37:24.369Z"
+        }
+      }
+    },
+    "100": {
+      "goals": {
+        "away|67|Dan Ndoye": {
+          "videoId": "9Ku-W7o128Y",
+          "title": "Switzerland EQUALIZER 🚨 Dan Ndoye Scores CLUTCH Goal vs Argentina | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/9Ku-W7o128Y/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-12T07:48:46.369Z"
         }
       }
     }
