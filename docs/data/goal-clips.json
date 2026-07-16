@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-15T16:53:33.458Z",
+  "fetchedAt": "2026-07-16T00:08:59.381Z",
   "games": {
     "83": {
       "goals": {
@@ -312,6 +312,17 @@
           "thumb": "https://i.ytimg.com/vi/lKTbmKa1t2A/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-14T20:41:16.249Z"
+        }
+      }
+    },
+    "102": {
+      "goals": {
+        "home|55|Anthony Gordon": {
+          "videoId": "30stgQwBTJk",
+          "title": "England Takes LEAD 🚨Anthony Gordon Finishes BRILLIANT Cross vs Argentina",
+          "thumb": "https://i.ytimg.com/vi/30stgQwBTJk/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-16T00:09:00.301Z"
         }
       }
     }
