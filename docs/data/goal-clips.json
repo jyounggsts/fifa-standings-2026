@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-18T20:27:08.492Z",
+  "fetchedAt": "2026-07-18T23:36:53.320Z",
   "games": {
     "83": {
       "goals": {
@@ -323,6 +323,66 @@
           "thumb": "https://i.ytimg.com/vi/30stgQwBTJk/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-16T00:09:00.301Z"
+        }
+      }
+    },
+    "103": {
+      "goals": {
+        "away|3|Declan Rice": {
+          "videoId": "4A0Y1DeG0pU",
+          "title": "England Takes LEAD 🚨 Declan Rice Scores Goal vs France | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/4A0Y1DeG0pU/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:54.287Z"
+        },
+        "away|18|Ezri Konsa": {
+          "videoId": "3XzfQEnTs_A",
+          "title": "Ezri Konsa's first career FIFA World Cup goal was a beauty",
+          "thumb": "https://i.ytimg.com/vi/3XzfQEnTs_A/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:55.516Z"
+        },
+        "away|37|Bukayo Saka": {
+          "videoId": "NGO5vnmb94Q",
+          "title": "England's Bukayo Saka Scores HAT TRICK vs France ⭐️ 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/NGO5vnmb94Q/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:56.721Z"
+        },
+        "away|45+1|Bukayo Saka": {
+          "videoId": "NGO5vnmb94Q",
+          "title": "England's Bukayo Saka Scores HAT TRICK vs France ⭐️ 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/NGO5vnmb94Q/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:57.824Z"
+        },
+        "home|48|Kylian Mbappé": {
+          "videoId": "yLLcUCrpJ-o",
+          "title": "Mbappé TIES Messi 😱 Mbappé Scores his 21st FIFA World Cup™ Goal to Even Lionel Messi’s Record",
+          "thumb": "https://i.ytimg.com/vi/yLLcUCrpJ-o/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:57.824Z"
+        },
+        "home|54|Bradley Barcola": {
+          "videoId": "GALby0pQG8w",
+          "title": "Bradley Barcola Goal | France 3-1 Senegal | FIFA World Cup 2026™",
+          "thumb": "https://i.ytimg.com/vi/GALby0pQG8w/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:58.890Z"
+        },
+        "home|66|Kylian Mbappé": {
+          "videoId": "yLLcUCrpJ-o",
+          "title": "Mbappé TIES Messi 😱 Mbappé Scores his 21st FIFA World Cup™ Goal to Even Lionel Messi’s Record",
+          "thumb": "https://i.ytimg.com/vi/yLLcUCrpJ-o/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:58.890Z"
+        },
+        "away|90+8|Jude Bellingham": {
+          "videoId": "DntXONJjAT8",
+          "title": "Jude Bellingham Scores STOPPAGE-TIME Goal to Seal Win vs France ⭐️ 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/DntXONJjAT8/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:58.891Z"
         }
       }
     }
