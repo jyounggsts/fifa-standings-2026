@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-18T23:36:53.320Z",
+  "fetchedAt": "2026-07-19T07:48:10.376Z",
   "games": {
     "83": {
       "goals": {
@@ -383,6 +383,16 @@
           "thumb": "https://i.ytimg.com/vi/DntXONJjAT8/hqdefault.jpg",
           "source": "fox-youtube",
           "matchedAt": "2026-07-18T23:36:58.891Z"
+        },
+        "away|87|Bukayo Saka": {
+          "videoId": null,
+          "espnId": 49395405,
+          "title": "Saka nets hat trick to seal bronze medal for England",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0718/dm_260718_WC_Highlight_Saka_nets_hat_trick_to_seal_bronze_medal_for_England_20260719_AUS_ONLY/dm_260718_WC_Highlight_Saka_nets_hat_trick_to_seal_bronze_medal_for_England_20260719_AUS_ONLY.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49395405/saka-nets-hat-trick-seal-bronze-medal-england",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-19T07:48:11.155Z"
         }
       }
     }
