@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-19T21:36:55.106Z",
+  "fetchedAt": "2026-07-20T08:28:17.430Z",
   "games": {
     "83": {
       "goals": {
@@ -393,6 +393,17 @@
           "source": "espn",
           "score": 2,
           "matchedAt": "2026-07-19T07:48:11.155Z"
+        }
+      }
+    },
+    "104": {
+      "goals": {
+        "home|106|Ferran Torres": {
+          "videoId": "k37GHIYMZXQ",
+          "title": "Spain GAME-WINNING Goal in 2026 FIFA World Cup™ Final 🏆Ferran Torres nets in Extra Time vs Argentina",
+          "thumb": "https://i.ytimg.com/vi/k37GHIYMZXQ/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-20T08:28:18.244Z"
         }
       }
     }
