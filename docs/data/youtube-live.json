@@ -1,9 +1,9 @@
 {
-  "fetchedAt": "2026-07-22T00:02:13.402Z",
+  "fetchedAt": "2026-07-22T09:35:33.250Z",
   "foxSports": {
-    "videoId": "D0VifU1gEyU",
-    "title": "",
-    "isLive": true,
+    "videoId": "GH1IPLMbo4E",
+    "title": "FOX Sports",
+    "isLive": false,
     "parsedTeams": [],
     "channelUrl": "https://www.youtube.com/@FOXSports/live"
   }
