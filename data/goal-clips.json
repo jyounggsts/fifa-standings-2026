@@ -1,0 +1,411 @@
+{
+  "fetchedAt": "2026-07-24T12:59:31.993Z",
+  "games": {
+    "83": {
+      "goals": {
+        "home|68|Cristiano Ronaldo": {
+          "videoId": "2m-Z52ObEow",
+          "title": "Cristiano Ronaldo Scores First FIFA World Cup™ Knockout Round Goal to Put Portugal Level vs Croatia",
+          "thumb": "https://i.ytimg.com/vi/2m-Z52ObEow/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-03T19:04:24.674Z"
+        }
+      }
+    },
+    "84": {
+      "goals": {}
+    },
+    "85": {
+      "goals": {}
+    },
+    "86": {
+      "goals": {
+        "home|29|Lionel Messi": {
+          "videoId": null,
+          "espnId": 49262253,
+          "title": "Buenos Aires goes wild for Messi's opening goal vs. Cape Verde",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0703/dm_260703_Buenos_Aires_goes_mad_for_Messis_opening_goal_vs_Cape_Verde/dm_260703_Buenos_Aires_goes_mad_for_Messis_opening_goal_vs_Cape_Verde.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49262253/buenos-aires-goes-wild-messi-opening-goal-vs-cape-verde",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-04T07:29:57.912Z"
+        }
+      }
+    },
+    "87": {
+      "goals": {}
+    },
+    "88": {
+      "goals": {
+        "away|13|Emam Ashour": {
+          "videoId": "T9t2F41kqG8",
+          "title": "What a goal for Egypt to take the lead in the Round of 32 🇪🇬 Emam Ashour nets the header!",
+          "thumb": "https://i.ytimg.com/vi/T9t2F41kqG8/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-03T19:04:26.080Z"
+        },
+        "home|55|Mohamed Hany": {
+          "videoId": "vzUdJ51WH48",
+          "title": "Mohamed Hany Own Goal هدف عكسي لمحمد هاني | مصر ضد أستراليا | Egypt vs Australia | Fifa World Cup 26",
+          "thumb": "https://i.ytimg.com/vi/vzUdJ51WH48/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-03T19:55:09.877Z"
+        }
+      }
+    },
+    "89": {
+      "goals": {
+        "away|70|Kylian Mbappé": {
+          "videoId": "sQ_DO_JnTbY",
+          "title": "Kylian Mbappé Scores Brace vs Sweden 🇫🇷 Third in 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/sQ_DO_JnTbY/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-04T23:44:06.007Z"
+        }
+      }
+    },
+    "90": {
+      "goals": {
+        "away|50|Azzedine Ounahi": {
+          "videoId": "oM4GjG3i7p4",
+          "title": "2-0 FOR MOROCCO LATE 🇲🇦 A beautiful run for the Atlas Lions and Azzedine Ounahi bags his brace!",
+          "thumb": "https://i.ytimg.com/vi/oM4GjG3i7p4/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-04T20:01:35.307Z"
+        },
+        "away|82|Azzedine Ounahi": {
+          "videoId": "oM4GjG3i7p4",
+          "title": "2-0 FOR MOROCCO LATE 🇲🇦 A beautiful run for the Atlas Lions and Azzedine Ounahi bags his brace!",
+          "thumb": "https://i.ytimg.com/vi/oM4GjG3i7p4/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-04T20:01:36.377Z"
+        }
+      }
+    },
+    "91": {
+      "goals": {
+        "away|79|Erling Haaland": {
+          "videoId": null,
+          "espnId": 49280183,
+          "title": "Erling Haaland goal vs. Brazil sends Oslo into raptures",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49280183/erling-haaland-goal-vs-brazil-sends-oslo-raptures",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-05T22:33:32.611Z"
+        },
+        "away|90|Erling Haaland": {
+          "videoId": null,
+          "espnId": 49280183,
+          "title": "Erling Haaland goal vs. Brazil sends Oslo into raptures",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5/dm_260705_COM_SOC_NEWS_Erling_Haaland_goal_vs_Brazil_sends_Oslo_into_raptures_2026_7_5.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49280183/erling-haaland-goal-vs-brazil-sends-oslo-raptures",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-05T22:33:32.611Z"
+        },
+        "home|90+10|Neymar": {
+          "videoId": "WQRsI5hYH9Q",
+          "title": "Neymar Jr. Scores Penalty In Final Minutes of Brazil's 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/WQRsI5hYH9Q/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-05T22:33:33.935Z"
+        }
+      }
+    },
+    "92": {
+      "goals": {
+        "away|36|Jude Bellingham": {
+          "videoId": null,
+          "espnId": 49282688,
+          "title": "Bellingham bags brace in 99 seconds against Mexico",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49282688/bellingham-bags-brace-99-seconds-mexico",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        },
+        "away|38|Jude Bellingham": {
+          "videoId": null,
+          "espnId": 49282688,
+          "title": "Bellingham bags brace in 99 seconds against Mexico",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS/Int_260705_Soccer_HIGHLIGHT_Bellingham_bags_brace_in_99_seconds_against_Mexico_202676_AUS.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49282688/bellingham-bags-brace-99-seconds-mexico",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        },
+        "home|42|Julián Quiñones": {
+          "videoId": null,
+          "espnId": 49282524,
+          "title": "Quiñones goal causes chaos in Mexico City",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0705/dm_260705_Quinones_goal_causes_chaos_in_Mexico_City/dm_260705_Quinones_goal_causes_chaos_in_Mexico_City.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49282524/quinones-goal-causes-chaos-mexico-city",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        },
+        "away|60|Harry Kane": {
+          "videoId": "FjfzHEhC4B8",
+          "title": "Harry Kane SCORES penalty to extend England's lead vs Mexico 🏴󠁧󠁢󠁥󠁮󠁧󠁿 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/FjfzHEhC4B8/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-06T13:01:17.714Z"
+        }
+      }
+    },
+    "93": {
+      "goals": {
+        "away|90+1|Mikel Merino": {
+          "videoId": null,
+          "espnId": 49289948,
+          "title": "Portuguese heartbreak in Lisbon as Merino scores winner for Spain",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0706/dm_260706_COM_SOC_Analysis_Portuguese_heartbreak_in_Lisbon_as_Merino_scores_winner_for_Spain_GLOBAL_2026-07-/dm_260706_COM_SOC_Analysis_Portuguese_heartbreak_in_Lisbon_as_Merino_scores_winner_for_Spain_GLOBAL_2026-07-.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49289948/portuguese-heartbreak-lisbon-merino-scores-winner-spain",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-06T23:40:56.481Z"
+        }
+      }
+    },
+    "94": {
+      "goals": {
+        "away|90+3|Romelu Lukaku": {
+          "videoId": "E59qXbuX-F0",
+          "title": "Belgium's Romelu Lukaku Scores Goal to Seal Win Against United States | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/E59qXbuX-F0/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T10:41:28.293Z"
+        }
+      }
+    },
+    "95": {
+      "goals": {
+        "away|15|Yasser Ibrahim": {
+          "videoId": "lLXF65ddt5w",
+          "title": "Egypt Takes LEAD 🚨 | Yasser Ibrahim Powers Home Header vs Argentina",
+          "thumb": "https://i.ytimg.com/vi/lLXF65ddt5w/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:26:59.225Z"
+        },
+        "away|67|Mostafa Zico": {
+          "videoId": "70Z0xTZaB0U",
+          "title": "That's just beautiful from Egypt! Mostafa Ziko with the free header to level the score!",
+          "thumb": "https://i.ytimg.com/vi/70Z0xTZaB0U/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:00.617Z"
+        },
+        "home|79|Cristian Romero": {
+          "videoId": "rCWOjMVaoWE",
+          "title": "A perfectly placed header from Cristian Romero",
+          "thumb": "https://i.ytimg.com/vi/rCWOjMVaoWE/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:01.881Z"
+        },
+        "home|83|Lionel Messi": {
+          "videoId": "7lnPk1BZbV0",
+          "title": "MESSI MAGIC ⭐️  Lionel Messi Scores His 20th FIFA World Cup™ Goal For Argentina",
+          "thumb": "https://i.ytimg.com/vi/7lnPk1BZbV0/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:01.881Z"
+        },
+        "home|90+2|Enzo Fernández": {
+          "videoId": "8RVeJch_Sy0",
+          "title": "Gol de Enzo Fernández, Enzo  Fernández Goal, Argentina vs Egypt 3-2 FIFA World Cup 2026",
+          "thumb": "https://i.ytimg.com/vi/8RVeJch_Sy0/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-07T18:27:03.118Z"
+        }
+      }
+    },
+    "97": {
+      "goals": {
+        "home|60|Kylian Mbappé": {
+          "videoId": "YKAGdwFrCck",
+          "title": "Mbappé Gives France LEAD 🚨 Kylian Mbappé Scores Penalty for his 19th FIFA World Cup™ Goal",
+          "thumb": "https://i.ytimg.com/vi/YKAGdwFrCck/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-09T22:46:47.663Z"
+        },
+        "home|66|Ousmane Dembélé": {
+          "videoId": "A6z5LVU0YIQ",
+          "title": "Dembélé EXTENDS Lead 🚨 France’s Ousmane Dembélé Scores Goal From Outside the Box vs Morocco",
+          "thumb": "https://i.ytimg.com/vi/A6z5LVU0YIQ/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-09T22:46:48.840Z"
+        }
+      }
+    },
+    "98": {
+      "goals": {
+        "home|30|Fabián Ruiz": {
+          "videoId": "ny57OyDC2HA",
+          "title": "Spain GOAL 🇪🇸 Fabián Ruiz Scores Goal vs Belgium | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/ny57OyDC2HA/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-10T21:34:07.160Z"
+        },
+        "away|41|Charles De Ketelaere": {
+          "videoId": "jQ5yDLwBh5M",
+          "title": "Belgium EQUALIZER 🚨 Charles De Ketelaere Scores BRILLIANT Header vs Spain",
+          "thumb": "https://i.ytimg.com/vi/jQ5yDLwBh5M/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-10T21:34:08.450Z"
+        },
+        "home|88|Mikel Merino": {
+          "videoId": "tOwNhYXBj2k",
+          "title": "Spain's Mikel Merino Scores Go-Ahead Stoppage-Time Goal vs Portugal | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/tOwNhYXBj2k/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-10T21:34:08.451Z"
+        }
+      }
+    },
+    "99": {
+      "goals": {
+        "home|36|Andreas Schjelderup": {
+          "videoId": "wqaisl4jGzc",
+          "title": "SPECTACULAR Norway Goal 😱 Andreas Schjelderup puts it in the top corner vs England",
+          "thumb": "https://i.ytimg.com/vi/wqaisl4jGzc/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-11T23:37:24.368Z"
+        },
+        "away|45+2|Jude Bellingham": {
+          "videoId": "BcrEqo6QwqU",
+          "title": "Jude Bellingham STUNS Mexico With Two Quick Goals to Give England a lead | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/BcrEqo6QwqU/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-11T23:37:24.369Z"
+        },
+        "away|93|Jude Bellingham": {
+          "videoId": "BcrEqo6QwqU",
+          "title": "Jude Bellingham STUNS Mexico With Two Quick Goals to Give England a lead | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/BcrEqo6QwqU/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-11T23:37:24.369Z"
+        }
+      }
+    },
+    "100": {
+      "goals": {
+        "away|67|Dan Ndoye": {
+          "videoId": "9Ku-W7o128Y",
+          "title": "Switzerland EQUALIZER 🚨 Dan Ndoye Scores CLUTCH Goal vs Argentina | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/9Ku-W7o128Y/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-12T07:48:46.369Z"
+        }
+      }
+    },
+    "101": {
+      "goals": {
+        "away|22|Mikel Oyarzabal": {
+          "videoId": "Gv5kzLVTlqI",
+          "title": "Spain Takes LEAD 🚨 Mikel Oyarzabal Converts Penalty vs France",
+          "thumb": "https://i.ytimg.com/vi/Gv5kzLVTlqI/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-14T20:41:14.895Z"
+        },
+        "away|58|Pedro Porro": {
+          "videoId": "lKTbmKa1t2A",
+          "title": "Spain EXTENDS Lead 🚨 Pedro Porro Scores to Give Spain a Two-Goal Lead vs France",
+          "thumb": "https://i.ytimg.com/vi/lKTbmKa1t2A/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-14T20:41:16.249Z"
+        }
+      }
+    },
+    "102": {
+      "goals": {
+        "home|55|Anthony Gordon": {
+          "videoId": "30stgQwBTJk",
+          "title": "England Takes LEAD 🚨Anthony Gordon Finishes BRILLIANT Cross vs Argentina",
+          "thumb": "https://i.ytimg.com/vi/30stgQwBTJk/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-16T00:09:00.301Z"
+        }
+      }
+    },
+    "103": {
+      "goals": {
+        "away|3|Declan Rice": {
+          "videoId": "4A0Y1DeG0pU",
+          "title": "England Takes LEAD 🚨 Declan Rice Scores Goal vs France | 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/4A0Y1DeG0pU/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:54.287Z"
+        },
+        "away|18|Ezri Konsa": {
+          "videoId": "3XzfQEnTs_A",
+          "title": "Ezri Konsa's first career FIFA World Cup goal was a beauty",
+          "thumb": "https://i.ytimg.com/vi/3XzfQEnTs_A/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:55.516Z"
+        },
+        "away|37|Bukayo Saka": {
+          "videoId": "NGO5vnmb94Q",
+          "title": "England's Bukayo Saka Scores HAT TRICK vs France ⭐️ 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/NGO5vnmb94Q/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:56.721Z"
+        },
+        "away|45+1|Bukayo Saka": {
+          "videoId": "NGO5vnmb94Q",
+          "title": "England's Bukayo Saka Scores HAT TRICK vs France ⭐️ 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/NGO5vnmb94Q/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:57.824Z"
+        },
+        "home|48|Kylian Mbappé": {
+          "videoId": "yLLcUCrpJ-o",
+          "title": "Mbappé TIES Messi 😱 Mbappé Scores his 21st FIFA World Cup™ Goal to Even Lionel Messi’s Record",
+          "thumb": "https://i.ytimg.com/vi/yLLcUCrpJ-o/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:57.824Z"
+        },
+        "home|54|Bradley Barcola": {
+          "videoId": "GALby0pQG8w",
+          "title": "Bradley Barcola Goal | France 3-1 Senegal | FIFA World Cup 2026™",
+          "thumb": "https://i.ytimg.com/vi/GALby0pQG8w/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:58.890Z"
+        },
+        "home|66|Kylian Mbappé": {
+          "videoId": "yLLcUCrpJ-o",
+          "title": "Mbappé TIES Messi 😱 Mbappé Scores his 21st FIFA World Cup™ Goal to Even Lionel Messi’s Record",
+          "thumb": "https://i.ytimg.com/vi/yLLcUCrpJ-o/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:58.890Z"
+        },
+        "away|90+8|Jude Bellingham": {
+          "videoId": "DntXONJjAT8",
+          "title": "Jude Bellingham Scores STOPPAGE-TIME Goal to Seal Win vs France ⭐️ 2026 FIFA World Cup™",
+          "thumb": "https://i.ytimg.com/vi/DntXONJjAT8/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-18T23:36:58.891Z"
+        },
+        "away|87|Bukayo Saka": {
+          "videoId": null,
+          "espnId": 49395405,
+          "title": "Saka nets hat trick to seal bronze medal for England",
+          "thumb": "https://a.espncdn.com/media/motion/2026/0718/dm_260718_WC_Highlight_Saka_nets_hat_trick_to_seal_bronze_medal_for_England_20260719_AUS_ONLY/dm_260718_WC_Highlight_Saka_nets_hat_trick_to_seal_bronze_medal_for_England_20260719_AUS_ONLY.jpg",
+          "webUrl": "https://www.espn.com/video/clip/_/id/49395405/saka-nets-hat-trick-seal-bronze-medal-england",
+          "source": "espn",
+          "score": 2,
+          "matchedAt": "2026-07-19T07:48:11.155Z"
+        }
+      }
+    },
+    "104": {
+      "goals": {
+        "home|106|Ferran Torres": {
+          "videoId": "k37GHIYMZXQ",
+          "title": "Spain GAME-WINNING Goal in 2026 FIFA World Cup™ Final 🏆Ferran Torres nets in Extra Time vs Argentina",
+          "thumb": "https://i.ytimg.com/vi/k37GHIYMZXQ/hqdefault.jpg",
+          "source": "fox-youtube",
+          "matchedAt": "2026-07-20T08:28:18.244Z"
+        }
+      }
+    }
+  }
+}
