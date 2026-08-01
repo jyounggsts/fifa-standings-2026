@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="FIFA World Cup 2026 live scores, bracket, and elimination tracker.">
+  <title>WC26 Live | World Cup 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="logo">
+        <span class="logo-icon">WC</span>
+        <span class="logo-text">26<span class="logo-live">LIVE</span></span>
+      </a>
+      <nav class="topnav" aria-label="Main">
+        <a href="#live" class="topnav-link active" data-section="live">Live</a>
+        <a href="#bracket" class="topnav-link" data-section="bracket">Bracket</a>
+        <a href="#eliminated" class="topnav-link" data-section="eliminated">Eliminated</a>
+        <a href="#standings" class="topnav-link" data-section="standings">Standings</a>
+      </nav>
+      <div class="topbar-right">
+        <span class="live-pill" id="live-indicator" hidden>
+          <span class="pulse"></span>
+          <span id="live-count-label">0 LIVE</span>
+        </span>
+        <span class="top-clock" id="live-clock">--:--:--</span>
+        <button class="icon-btn" id="refresh-btn" title="Refresh" aria-label="Refresh">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="ticker" id="live-banner" hidden>
+    <div class="ticker-inner" id="live-banner-matches"></div>
+  </div>
+
+  <main class="page">
+    <section class="block" id="live">
+      <div class="block-head">
+        <h2 class="block-title"><span class="dot-live"></span> Live &amp; Today</h2>
+        <p class="block-sub" id="today-meta">Loading...</p>
+      </div>
+      <div class="card-grid" id="today-timeline">
+        <div class="loading" id="today-loading"><div class="spinner"></div><p>Loading matches...</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="bracket">
+      <div class="block-head">
+        <h2 class="block-title">Knockout Bracket</h2>
+        <div class="legend-row">
+          <span class="leg winner-leg">Winner</span>
+          <span class="leg elim-leg">Eliminated</span>
+          <span class="leg risk-leg">On the brink</span>
+          <span class="leg live-leg">Live</span>
+        </div>
+      </div>
+      <div class="bracket-wrap">
+        <div class="bracket" id="bracket-board">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="split-row">
+      <section class="block block-half" id="eliminated">
+        <div class="block-head">
+          <h2 class="block-title">Eliminated</h2>
+          <span class="count-badge" id="elim-count">0</span>
+        </div>
+        <div class="elim-list" id="elim-list"></div>
+      </section>
+
+      <section class="block block-half" id="at-risk">
+        <div class="block-head">
+          <h2 class="block-title">On the Brink</h2>
+          <span class="count-badge risk" id="risk-count">0</span>
+        </div>
+        <p class="block-sub">Teams playing next — lose and go home</p>
+        <div class="risk-list" id="risk-list"></div>
+      </section>
+    </div>
+
+    <section class="block" id="standings">
+      <div class="block-head">
+        <h2 class="block-title">Group Standings</h2>
+        <div class="group-tabs" id="group-tabs" role="tablist"></div>
+      </div>
+      <div id="standings-layout">
+        <div class="loading" id="standings-loading"><div class="spinner"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Match data from <a href="https://worldcup26.ir" target="_blank" rel="noopener">worldcup26.ir</a> · Live odds via ESPN / DraftKings · Goal clips via FOX Sports YouTube when available</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
